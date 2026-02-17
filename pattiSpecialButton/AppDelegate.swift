@@ -1,4 +1,5 @@
 import AppKit
+import AVFoundation
 
 // AppDelegate is the core of the app. It manages the menu bar icon,
 // animation, click handling, and sound playback.
@@ -26,13 +27,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let frameCount = 6
     private let frameDuration: TimeInterval = 0.1  // 0.6s total / 6 frames
 
-    // The sound to play on left-click. NSSound(named:) looks in:
-    //   1. The app bundle (for custom sounds — drop a file here later)
-    //   2. ~/Library/Sounds/
-    //   3. /System/Library/Sounds/ (system sounds like "Funk", "Pop", etc.)
-    // To swap to a custom fart sound later: drop "fart.aiff" in the project
-    // folder and change this to "fart".
-    private let soundName = "Funk"
+    // AVAudioPlayer for the fart sound — supports looping and stop/start.
+    private var audioPlayer: AVAudioPlayer?
+    // A quick click always plays at least this long, so the first fart completes.
+    private let minimumPlayDuration: TimeInterval = 0.5
+    // Tracks whether the user is currently holding the mouse button.
+    private var isMouseDown = false
+    // Fires after minimumPlayDuration to check if we should stop.
+    private var minimumTimer: Timer?
 
     // MARK: - App Lifecycle
 
@@ -80,7 +82,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         // Tell the button to notify us on BOTH left-click and right-click.
         // By default, NSStatusBarButton only fires on left-click.
-        button.sendAction(on: [.leftMouseUp, .rightMouseUp])
+        button.sendAction(on: [.leftMouseDown, .leftMouseUp, .rightMouseUp])
 
         // When clicked, call our statusBarButtonClicked method.
         button.action = #selector(statusBarButtonClicked(_:))
@@ -89,18 +91,20 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     // MARK: - Click Handling
 
-    // Called when the user clicks the menu bar icon.
-    // We check which mouse button was used to decide what to do.
+    // Called when the user interacts with the menu bar icon.
+    // Routes mouse-down, mouse-up, and right-click to different actions.
     @objc private func statusBarButtonClicked(_ sender: NSStatusBarButton) {
         guard let event = NSApp.currentEvent else { return }
 
         switch event.type {
+        case .leftMouseDown:
+            startSound()
+        case .leftMouseUp:
+            stopSound()
         case .rightMouseUp:
-            // Right-click → show the context menu with "Quit"
             showContextMenu()
         default:
-            // Left-click (or any other click) → play the sound
-            playSound()
+            break
         }
     }
 
@@ -130,9 +134,43 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         statusItem.menu = nil
     }
 
-    // Plays the configured sound.
-    private func playSound() {
-        NSSound(named: NSSound.Name(soundName))?.play()
+    // Starts playing the fart sound from the beginning, looping infinitely.
+    private func startSound() {
+        guard let url = Bundle.main.url(forResource: "556505__jixolros__small-realpoots105-110", withExtension: "wav") else { return }
+
+        do {
+            audioPlayer = try AVAudioPlayer(contentsOf: url)
+            audioPlayer?.numberOfLoops = -1
+            audioPlayer?.currentTime = 0
+            audioPlayer?.play()
+        } catch {
+            return
+        }
+
+        isMouseDown = true
+        minimumTimer?.invalidate()
+        minimumTimer = Timer.scheduledTimer(timeInterval: minimumPlayDuration, target: self,
+                                            selector: #selector(minimumTimerFired), userInfo: nil, repeats: false)
+    }
+
+    // Called on mouse-up. Stops immediately if minimum has passed,
+    // otherwise lets the timer handle it.
+    private func stopSound() {
+        isMouseDown = false
+        // If the minimum timer already fired, stop now.
+        // If it's still running, minimumTimerFired will stop playback when it fires.
+        if minimumTimer == nil {
+            audioPlayer?.stop()
+        }
+    }
+
+    // Called after minimumPlayDuration. If the user already released,
+    // stop playback. If still holding, do nothing — stopSound() will handle it.
+    @objc private func minimumTimerFired() {
+        minimumTimer = nil
+        if !isMouseDown {
+            audioPlayer?.stop()
+        }
     }
 
     // MARK: - Animation
