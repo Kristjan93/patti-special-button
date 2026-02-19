@@ -35,7 +35,7 @@ Hybrid SwiftUI + AppKit. SwiftUI provides the `@main` app lifecycle, but all men
 
 ## Assets
 
-- `Assets.xcassets/ButtFrame0–5.imageset/` — 6 animation frames (36x36 PNG, 2x scale, template rendering for light/dark menu bar)
+- `Assets.xcassets/ButtFrame0–5.imageset/` — 6 animation frames (40x40 PNG, 2x scale, template rendering for light/dark menu bar)
 - `Assets/async-butt.gif` — Original source GIF (512x512)
 - `Assets/ButtFrames/` — Extracted PNG frames (source files)
 

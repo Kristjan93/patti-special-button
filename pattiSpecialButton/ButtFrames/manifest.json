@@ -1,0 +1,239 @@
+{
+  "butts": [
+    {
+      "id": "alien-butt",
+      "name": "Alien Butt",
+      "frameCount": 16
+    },
+    {
+      "id": "async-butt",
+      "name": "async butt",
+      "frameCount": 6
+    },
+    {
+      "id": "bongo-butt",
+      "name": "bongo butt",
+      "frameCount": 17
+    },
+    {
+      "id": "bouncing-butt-ii",
+      "name": "bouncing butt II",
+      "frameCount": 6
+    },
+    {
+      "id": "bouncy-butt",
+      "name": "bouncy butt",
+      "frameCount": 4
+    },
+    {
+      "id": "business",
+      "name": "Business",
+      "frameCount": 4
+    },
+    {
+      "id": "censoredbutt",
+      "name": "CensoredButt",
+      "frameCount": 5
+    },
+    {
+      "id": "clapping-butt",
+      "name": "clapping butt",
+      "frameCount": 5
+    },
+    {
+      "id": "cow-butt",
+      "name": "Cow Butt",
+      "frameCount": 4
+    },
+    {
+      "id": "diver-butt",
+      "name": "Diver Butt",
+      "frameCount": 11
+    },
+    {
+      "id": "easterbunny",
+      "name": "EasterBunny",
+      "frameCount": 4
+    },
+    {
+      "id": "einsteinbutt",
+      "name": "EinsteinButt",
+      "frameCount": 5
+    },
+    {
+      "id": "flaming-butt",
+      "name": "flaming butt",
+      "frameCount": 3
+    },
+    {
+      "id": "flexing-butt",
+      "name": "flexing butt",
+      "frameCount": 9
+    },
+    {
+      "id": "frankenstein-butt",
+      "name": "frankenstein butt",
+      "frameCount": 12
+    },
+    {
+      "id": "frida-butthlo",
+      "name": "frida butthlo",
+      "frameCount": 4
+    },
+    {
+      "id": "glassesbutt",
+      "name": "GlassesButt",
+      "frameCount": 5
+    },
+    {
+      "id": "hairybutt",
+      "name": "HairyButt",
+      "frameCount": 5
+    },
+    {
+      "id": "heart-eyes-butt",
+      "name": "Heart Eyes Butt",
+      "frameCount": 6
+    },
+    {
+      "id": "inception-butt",
+      "name": "inception butt",
+      "frameCount": 17
+    },
+    {
+      "id": "infinite-butt",
+      "name": "infinite butt",
+      "frameCount": 8
+    },
+    {
+      "id": "jeans-butt",
+      "name": "Jeans Butt",
+      "frameCount": 16
+    },
+    {
+      "id": "keynotebutt",
+      "name": "KeynoteButt",
+      "frameCount": 4
+    },
+    {
+      "id": "kissing-butt",
+      "name": "kissing butt",
+      "frameCount": 13
+    },
+    {
+      "id": "magic-butt",
+      "name": "Magic Butt",
+      "frameCount": 27
+    },
+    {
+      "id": "no-butt",
+      "name": "no butt",
+      "frameCount": 10
+    },
+    {
+      "id": "pabsbutt",
+      "name": "PabsButt",
+      "frameCount": 21
+    },
+    {
+      "id": "pirate-butt",
+      "name": "pirate butt",
+      "frameCount": 20
+    },
+    {
+      "id": "pointing-butt",
+      "name": "pointing butt",
+      "frameCount": 6
+    },
+    {
+      "id": "romantic-butt",
+      "name": "Romantic Butt",
+      "frameCount": 13
+    },
+    {
+      "id": "samba-butt",
+      "name": "Samba butt",
+      "frameCount": 20
+    },
+    {
+      "id": "seeing-butt",
+      "name": "seeing butt",
+      "frameCount": 16
+    },
+    {
+      "id": "shiny-butt",
+      "name": "shiny butt",
+      "frameCount": 15
+    },
+    {
+      "id": "shivering-butt",
+      "name": "Shivering butt",
+      "frameCount": 7
+    },
+    {
+      "id": "smallbutt",
+      "name": "SmallButt",
+      "frameCount": 5
+    },
+    {
+      "id": "space-butt",
+      "name": "space butt",
+      "frameCount": 9
+    },
+    {
+      "id": "superhero-butt",
+      "name": "Superhero butt",
+      "frameCount": 22
+    },
+    {
+      "id": "sweaty-butt",
+      "name": "Sweaty butt",
+      "frameCount": 6
+    },
+    {
+      "id": "swinging-butt",
+      "name": "swinging butt",
+      "frameCount": 7
+    },
+    {
+      "id": "thunderbutt",
+      "name": "ThunderButt",
+      "frameCount": 7
+    },
+    {
+      "id": "triple-butt",
+      "name": "triple butt",
+      "frameCount": 10
+    },
+    {
+      "id": "underwater-butt",
+      "name": "underwater butt",
+      "frameCount": 10
+    },
+    {
+      "id": "ux-designer-butt",
+      "name": "UX Designer Butt",
+      "frameCount": 5
+    },
+    {
+      "id": "vampire",
+      "name": "vampire",
+      "frameCount": 6
+    },
+    {
+      "id": "vampire-butt",
+      "name": "vampire butt",
+      "frameCount": 1
+    },
+    {
+      "id": "werewolf-putt",
+      "name": "Werewolf Putt",
+      "frameCount": 18
+    },
+    {
+      "id": "zebra-butt",
+      "name": "Zebra butt",
+      "frameCount": 7
+    }
+  ]
+}

@@ -45,7 +45,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             guard let image = NSImage(named: name) else {
                 fatalError("Missing image asset: \(name)")
             }
-            image.size = NSSize(width: 18, height: 18)
+            image.size = NSSize(width: 20, height: 20)
             image.isTemplate = true
             frameImages.append(image)
         }
