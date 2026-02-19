@@ -21,7 +21,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var frameImages: [NSImage] = []
     private var currentFrameIndex = 0
 
-    private let frameCount = 6
+    private let currentButtId = "async-butt"
     private let frameDuration: TimeInterval = 0.1
     private let minimumPlayDuration: TimeInterval = 0.5
 
@@ -40,14 +40,25 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     // MARK: - Frame Loading
 
     private func loadFrameImages() {
-        for i in 0..<frameCount {
-            let name = "ButtFrame\(i)"
-            guard let image = NSImage(named: name) else {
-                fatalError("Missing image asset: \(name)")
+        guard let buttDir = Bundle.main.url(forResource: currentButtId, withExtension: nil, subdirectory: "ButtFrames") else {
+            fatalError("Missing ButtFrames/\(currentButtId) in bundle")
+        }
+
+        var i = 0
+        while true {
+            let url = buttDir.appendingPathComponent(String(format: "frame_%02d.png", i))
+            guard FileManager.default.fileExists(atPath: url.path) else { break }
+            guard let image = NSImage(contentsOf: url) else {
+                fatalError("Failed to load frame \(i) for \(currentButtId)")
             }
             image.size = NSSize(width: 20, height: 20)
             image.isTemplate = true
             frameImages.append(image)
+            i += 1
+        }
+
+        if frameImages.isEmpty {
+            fatalError("No frames found in ButtFrames/\(currentButtId)")
         }
     }
 
@@ -127,7 +138,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private func advanceFrame() {
-        currentFrameIndex = (currentFrameIndex + 1) % frameCount
+        currentFrameIndex = (currentFrameIndex + 1) % frameImages.count
         statusItem.button?.image = frameImages[currentFrameIndex]
     }
 }

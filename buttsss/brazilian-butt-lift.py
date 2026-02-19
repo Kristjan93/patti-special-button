@@ -3,14 +3,14 @@
 
 Scans the buttsss/ directory for .gif files, extracts each frame,
 converts to grayscale, resizes to 40x40 pixels, and saves as PNGs
-organized into per-butt folders with a manifest.json.
+organized into per-butt subfolders with a manifest.json.
 
 Usage:
     cd buttsss/
     python3 -m venv .venv
     source .venv/bin/activate
     pip install -r requirements.txt
-    python3 prepare_frames.py
+    python3 brazilian-butt-lift.py
 """
 
 import json
@@ -26,14 +26,14 @@ FRAME_SIZE = (40, 40)
 RESAMPLE = Image.LANCZOS
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-GIF_DIR = SCRIPT_DIR  # GIFs live alongside this script
-OUTPUT_DIR = SCRIPT_DIR.parent / "pattiSpecialButton" / "ButtFrames"
+GIF_DIR = SCRIPT_DIR / "fractured-but-whole"
+OUTPUT_DIR = SCRIPT_DIR.parent / "ButtFrames"
 
 
 # -- Helpers ----------------------------------------------------------------
 
 def slugify(name: str) -> str:
-    """Turn a GIF filename into a clean folder name.
+    """Turn a GIF filename into a clean identifier.
 
     'Alien-Butt.gif' -> 'alien-butt'
     'bouncing-butt-II.gif' -> 'bouncing-butt-ii'
