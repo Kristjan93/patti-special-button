@@ -4,7 +4,6 @@ struct ButtInfo: Codable, Identifiable {
     let id: String
     let name: String
     let frameCount: Int
-    let gifFilename: String
 }
 
 struct ButtManifest: Codable {

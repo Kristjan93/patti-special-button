@@ -5,13 +5,13 @@ struct AnimatedButtCell: View {
     let isSelected: Bool
     let onTap: () -> Void
 
-    @StateObject private var animator: GIFAnimator
+    @StateObject private var animator: FrameAnimator
 
     init(butt: ButtInfo, isSelected: Bool, onTap: @escaping () -> Void) {
         self.butt = butt
         self.isSelected = isSelected
         self.onTap = onTap
-        _animator = StateObject(wrappedValue: GIFAnimator(gifFilename: butt.gifFilename))
+        _animator = StateObject(wrappedValue: FrameAnimator(buttId: butt.id))
     }
 
     var body: some View {

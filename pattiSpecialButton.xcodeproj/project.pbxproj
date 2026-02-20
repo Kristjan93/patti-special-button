@@ -8,7 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		2D49E938BDFD41A197956296 /* ButtFrames in Resources */ = {isa = PBXBuildFile; fileRef = E93A83B1F3024B7692613BF8 /* ButtFrames */; };
-		D4E8B6A9C1F34D8EABC52F17 /* buttsss/fractured-but-whole in Resources */ = {isa = PBXBuildFile; fileRef = A7C3F21E8B4D4FA2BC61D935 /* buttsss/fractured-but-whole */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -32,7 +31,6 @@
 		9F0FB7B22F44C8FE002228F8 /* pattiSpecialButton.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = pattiSpecialButton.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9F0FB7C02F44C8FF002228F8 /* pattiSpecialButtonTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = pattiSpecialButtonTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		9F0FB7CA2F44C900002228F8 /* pattiSpecialButtonUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = pattiSpecialButtonUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		A7C3F21E8B4D4FA2BC61D935 /* buttsss/fractured-but-whole */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "buttsss/fractured-but-whole"; sourceTree = "<group>"; };
 		E93A83B1F3024B7692613BF8 /* ButtFrames */ = {isa = PBXFileReference; lastKnownFileType = folder; path = ButtFrames; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -83,7 +81,6 @@
 			isa = PBXGroup;
 			children = (
 				E93A83B1F3024B7692613BF8 /* ButtFrames */,
-				A7C3F21E8B4D4FA2BC61D935 /* buttsss/fractured-but-whole */,
 				9F0FB7B42F44C8FE002228F8 /* pattiSpecialButton */,
 				9F0FB7C32F44C8FF002228F8 /* pattiSpecialButtonTests */,
 				9F0FB7CD2F44C900002228F8 /* pattiSpecialButtonUITests */,
@@ -222,7 +219,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				2D49E938BDFD41A197956296 /* ButtFrames in Resources */,
-				D4E8B6A9C1F34D8EABC52F17 /* buttsss/fractured-but-whole in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

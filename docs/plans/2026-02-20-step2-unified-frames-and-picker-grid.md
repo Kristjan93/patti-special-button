@@ -4,7 +4,24 @@
 
 Expand the Python script to generate 160x160 PNG frames. Both the menu bar icon and the picker grid load the same pre-processed PNGs. This eliminates GIFAnimator (no runtime GIF decoding) and removes the source GIFs from the app bundle. Also fix inconsistent name capitalization in the manifest.
 
-## Status: not started
+## Status: in progress
+
+## Design decisions (brainstormed 2026-02-20)
+
+### Performance: per-cell FrameAnimator
+Each cell owns its own `FrameAnimator` as a `@StateObject`. `LazyVGrid` naturally limits active animators to visible cells via `onAppear`/`onDisappear`. Simple and isolated — optimize to a shared tick later only if profiling shows a problem.
+
+### Frame loading: duplicate, don't share
+AppDelegate and FrameAnimator both iterate `frame_00.png, frame_01.png, ...` but want different sizing (`20pt + isTemplate` vs full size). Keep the loops separate — ~15 lines each, different behavior. May extract a shared service later.
+
+### Timer: `Timer` for FrameAnimator
+`DispatchSourceTimer` in AppDelegate has no menu-bar-specific reason — both work identically on main thread. `Timer` is simpler and more idiomatic for a SwiftUI `ObservableObject`. AppDelegate keeps `DispatchSourceTimer` (working code, no reason to touch it).
+
+### Selection state: `@AppStorage`
+`@AppStorage("selectedButtId")` in ButtPickerView reads/writes UserDefaults directly. SwiftUI re-renders on change (highlight moves). AppDelegate already observes `UserDefaults.didChangeNotification` → reloads frames. Zero coordination code — UserDefaults is the shared bus.
+
+### Grid layout: `LazyVGrid` with adaptive columns
+`GridItem(.adaptive(minimum: 100))` fills available width (~4-5 per row at 500pt). Wrapped in `ScrollView` for the ~10 rows of content.
 
 ## What changes
 

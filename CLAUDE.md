@@ -41,6 +41,12 @@ The window spawns centered below the menu bar icon (clamped to screen edges). Wh
 
 Selected butt id is stored in `UserDefaults` (key: `"selectedButtId"`, default: `"async-butt"`). `AppDelegate` observes `UserDefaults.didChangeNotification` — when the selected butt changes, it cancels the animation timer, reloads frames from the new butt's subfolder, and restarts animation.
 
+### Why DispatchSourceTimer (not Timer)
+
+`Timer` runs on the RunLoop and is scheduled in `.default` mode by default. When the user interacts with UI (dragging, holding menus, resizing), the run loop switches to `.tracking` mode and `.default` timers stop firing — the animation freezes. Scheduling in `.common` mode (which includes both `.default` and `.tracking`) fixes this, but is easy to forget. `DispatchSourceTimer` runs on a GCD queue, bypasses the RunLoop entirely, and fires regardless of UI interaction. For a menu bar animation that must never hitch, it's the simpler and more reliable choice.
+
+**App Nap**: macOS throttles timers for apps it considers idle (no visible windows, no interaction). As an `LSUIElement` app with no main window, this app is a candidate. In practice the visible menu bar icon prevents aggressive throttling, but if animation ever stutters on battery, App Nap is the likely cause. `ProcessInfo.processInfo.beginActivity(options:reason:)` can opt out, but increases energy use.
+
 ## Sound
 
 - **File**: `556505__jixolros__small-realpoots105-110.wav` — contains multiple short farts with 0.4s gaps, trimmed from original freesound.org recording.

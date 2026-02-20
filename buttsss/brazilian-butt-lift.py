@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-"""Extract, convert, and resize animated GIF frames for the menu bar icon.
+"""Extract, convert, and resize animated GIF frames for the app.
 
 Scans the buttsss/ directory for .gif files, extracts each frame,
-converts to grayscale, resizes to 40x40 pixels, and saves as PNGs
-organized into per-butt subfolders with a manifest.json.
+converts to grayscale, resizes to 160x160 pixels, and saves as PNGs
+organized into per-butt subfolders with a manifest.json. The 160px
+frames serve both the menu bar (downscaled to 20pt) and the picker
+grid (displayed at 80pt @2x).
 
 Usage:
     cd buttsss/
@@ -22,7 +24,7 @@ from PIL import Image
 
 # -- Configuration ----------------------------------------------------------
 
-FRAME_SIZE = (40, 40)
+FRAME_SIZE = (160, 160)
 RESAMPLE = Image.LANCZOS
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -47,13 +49,18 @@ def slugify(name: str) -> str:
 
 
 def display_name(name: str) -> str:
-    """Turn a GIF filename into a human-readable display name.
+    """Turn a GIF filename into a consistent title-case display name.
 
     'Alien-Butt.gif' -> 'Alien Butt'
     'bouncing-butt-II.gif' -> 'Bouncing Butt II'
+    'easterBunny.gif' -> 'Easter Bunny'
     """
     stem = Path(name).stem
-    return re.sub(r"[-_]+", " ", stem).strip()
+    # Split camelCase boundaries before normalizing separators
+    spaced = re.sub(r"([a-z])([A-Z])", r"\1 \2", stem)
+    spaced = re.sub(r"[-_]+", " ", spaced).strip()
+    # Capitalize first letter of each word, preserve the rest (keeps "II" intact)
+    return " ".join(w[0].upper() + w[1:] for w in spaced.split() if w)
 
 
 def extract_frames(gif_path: Path) -> list[Image.Image]:
@@ -74,11 +81,11 @@ def extract_frames(gif_path: Path) -> list[Image.Image]:
 
 
 def process_frame(frame: Image.Image) -> Image.Image:
-    """Convert a single RGBA frame to a grayscale 40x40 template image.
+    """Convert a single RGBA frame to a grayscale 160x160 template image.
 
     Pipeline:
       1. Convert to grayscale (luminance)
-      2. Resize to 40x40
+      2. Resize to 160x160
       --- TODO: future step ---
       3. Convert to RGBA with alpha-based transparency
          (dark lines -> opaque black, white background -> alpha=0)
@@ -119,7 +126,7 @@ def process_gif(gif_path: Path) -> dict | None:
         out_path = out_dir / f"frame_{i:02d}.png"
         processed.save(out_path, "PNG")
 
-    return {"id": slug, "name": name, "frameCount": len(frames), "gifFilename": gif_path.name}
+    return {"id": slug, "name": name, "frameCount": len(frames)}
 
 
 def main():
