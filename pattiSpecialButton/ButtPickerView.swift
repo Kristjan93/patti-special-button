@@ -1,8 +1,9 @@
 import SwiftUI
+import Combine
 
 extension Notification.Name {
     static let previewButt = Notification.Name("previewButt")
-    static let confirmAndClose = Notification.Name("confirmAndClose")
+    static let moveFocus = Notification.Name("moveFocus")
 }
 
 struct ButtPickerView: View {
@@ -33,14 +34,13 @@ struct ButtPickerView: View {
                 }
                 .padding(Layout.gridPadding)
             }
-            .contentMargins(.vertical, 12)
+            .padding(.vertical, 12)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .focusable()
-            .onKeyPress(.leftArrow) { move(-1, proxy: proxy) }
-            .onKeyPress(.rightArrow) { move(1, proxy: proxy) }
-            .onKeyPress(.upArrow) { move(-Layout.gridColumns, proxy: proxy) }
-            .onKeyPress(.downArrow) { move(Layout.gridColumns, proxy: proxy) }
-            .onKeyPress(.return) { selectFocused() }
+            .onReceive(NotificationCenter.default.publisher(for: .moveFocus)) { notification in
+                guard let offset = notification.userInfo?["offset"] as? Int else { return }
+                move(offset, proxy: proxy)
+            }
             .onAppear {
                 if let index = butts.firstIndex(where: { $0.id == selectedButtId }) {
                     focusedIndex = index
@@ -50,21 +50,14 @@ struct ButtPickerView: View {
         }
     }
 
-    private func move(_ offset: Int, proxy: ScrollViewProxy) -> KeyPress.Result {
+    private func move(_ offset: Int, proxy: ScrollViewProxy) {
         let newIndex = focusedIndex + offset
-        guard newIndex >= 0 && newIndex < butts.count else { return .handled }
+        guard newIndex >= 0 && newIndex < butts.count else { return }
         focusedIndex = newIndex
         withAnimation { proxy.scrollTo("\(butts[newIndex].id)-\(displayMode)") }
         NotificationCenter.default.post(
             name: .previewButt, object: nil,
             userInfo: ["buttId": butts[newIndex].id]
         )
-        return .handled
-    }
-
-    private func selectFocused() -> KeyPress.Result {
-        selectedButtId = butts[focusedIndex].id
-        NotificationCenter.default.post(name: .confirmAndClose, object: nil)
-        return .handled
     }
 }

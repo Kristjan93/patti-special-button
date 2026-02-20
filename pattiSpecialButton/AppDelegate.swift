@@ -33,7 +33,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     private var iconPickerPopover: NSPopover?
     private var committedButtId: String?
     private var previewObservation: NSObjectProtocol?
-    private var confirmCloseObservation: NSObjectProtocol?
+    private var keyMonitor: Any?
 
     private var buttLookup: [String: ButtInfo] = [:]
 
@@ -317,10 +317,33 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             self?.previewButt(buttId)
         }
 
-        confirmCloseObservation = NotificationCenter.default.addObserver(
-            forName: .confirmAndClose, object: nil, queue: .main
-        ) { [weak self] _ in
-            self?.commitAndClosePopover()
+        // Arrow keys and Return are handled via NSEvent monitor instead of SwiftUI's
+        // .onKeyPress (macOS 14+), so keyboard nav works back to macOS 12.
+        keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            guard let self else { return event }
+            switch event.keyCode {
+            case 123: // left arrow
+                NotificationCenter.default.post(name: .moveFocus, object: nil,
+                                                userInfo: ["offset": -1])
+                return nil
+            case 124: // right arrow
+                NotificationCenter.default.post(name: .moveFocus, object: nil,
+                                                userInfo: ["offset": 1])
+                return nil
+            case 126: // up arrow
+                NotificationCenter.default.post(name: .moveFocus, object: nil,
+                                                userInfo: ["offset": -Layout.gridColumns])
+                return nil
+            case 125: // down arrow
+                NotificationCenter.default.post(name: .moveFocus, object: nil,
+                                                userInfo: ["offset": Layout.gridColumns])
+                return nil
+            case 36: // return
+                self.commitAndClosePopover()
+                return nil
+            default:
+                return event
+            }
         }
 
         guard let button = statusItem.button else { return }
@@ -332,15 +355,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     }
 
     func popoverDidClose(_ notification: Notification) {
+        if let monitor = keyMonitor {
+            NSEvent.removeMonitor(monitor)
+            keyMonitor = nil
+        }
         if let obs = previewObservation {
             NotificationCenter.default.removeObserver(obs)
             previewObservation = nil
         }
-        if let obs = confirmCloseObservation {
-            NotificationCenter.default.removeObserver(obs)
-            confirmCloseObservation = nil
-        }
-
         // Revert to committed butt if we were previewing something else
         if let committed = committedButtId, committed != lastLoadedButtId {
             loadButtById(committed)
