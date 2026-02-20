@@ -30,7 +30,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var pendingStop: DispatchWorkItem?
 
     private var defaultsObservation: NSObjectProtocol?
-    private var iconPickerWindow: NSWindow?
+    private var iconPickerPopover: NSPopover?
 
     private var currentButtId: String {
         UserDefaults.standard.string(forKey: "selectedButtId") ?? "async-butt"
@@ -51,11 +51,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             self?.handleButtChange()
         }
 
-    }
-
-    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-        showIconPicker()
-        return true
     }
 
     // MARK: - Butt Switching
@@ -177,80 +172,30 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         statusItem.menu = nil
     }
 
-    // MARK: - Icon Picker Window
+    // MARK: - Icon Picker Popover
 
     @objc private func changeIconMenuAction() {
         showIconPicker()
     }
 
     private func showIconPicker() {
-        if let window = iconPickerWindow {
-            window.makeKeyAndOrderFront(nil)
-            NSApp.setActivationPolicy(.regular)
-            NSApp.activate(ignoringOtherApps: true)
+        if let popover = iconPickerPopover, popover.isShown {
+            popover.performClose(nil)
             return
         }
 
-        let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 500, height: 500),
-            styleMask: [.titled, .closable, .resizable],
-            backing: .buffered,
-            defer: false
-        )
-        window.title = "Change Icon"
-        window.minSize = NSSize(width: 400, height: 300)
-        window.contentView = NSHostingView(rootView: ButtPickerView())
-        window.isReleasedWhenClosed = false
-        positionWindowBelowStatusItem(window)
-        iconPickerWindow = window
+        let popover = NSPopover()
+        popover.contentSize = NSSize(width: 500, height: 500)
+        popover.behavior = .transient
+        popover.contentViewController = NSHostingController(rootView: ButtPickerView())
+        iconPickerPopover = popover
 
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(iconPickerWindowWillClose(_:)),
-            name: NSWindow.willCloseNotification,
-            object: window
-        )
-
-        if let firstFrame = frameImages.first {
-            NSApp.applicationIconImage = firstFrame
-        }
-
-        NSApp.setActivationPolicy(.regular)
+        // Activate before showing so the popover's content is immediately
+        // interactive — otherwise the first click just activates the app.
         NSApp.activate(ignoringOtherApps: true)
-        window.makeKeyAndOrderFront(nil)
-    }
 
-    private func positionWindowBelowStatusItem(_ window: NSWindow) {
-        let padding: CGFloat = 8
-
-        guard let buttonWindow = statusItem.button?.window else {
-            window.center()
-            return
-        }
-
-        let buttonFrame = buttonWindow.frame
-        let buttonMidX = buttonFrame.midX
-        let windowSize = window.frame.size
-
-        // Center horizontally under the status item
-        var x = buttonMidX - windowSize.width / 2
-        // Top of window just below the menu bar with padding
-        let y = buttonFrame.minY - windowSize.height - padding
-
-        // Clamp to screen bounds so it doesn't clip off the right (or left) edge
-        if let screen = NSScreen.main ?? NSScreen.screens.first {
-            let screenFrame = screen.visibleFrame
-            x = max(screenFrame.minX + padding, x)
-            x = min(screenFrame.maxX - windowSize.width - padding, x)
-        }
-
-        window.setFrameOrigin(NSPoint(x: x, y: y))
-    }
-
-    @objc private func iconPickerWindowWillClose(_ notification: Notification) {
-        DispatchQueue.main.async {
-            NSApp.setActivationPolicy(.accessory)
-        }
+        guard let button = statusItem.button else { return }
+        popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
     }
 
     // MARK: - Animation

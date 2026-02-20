@@ -8,15 +8,15 @@ A macOS menu bar app. A wiggling animated butt lives in the menu bar and plays a
 - **Left-click (tap)**: Plays a short fart sound (minimum 0.5s so the first fart always completes).
 - **Left-click (hold)**: Keeps playing farts in a loop for as long as the mouse is held. Loops back to start if held past end of file.
 - **Right-click menu**: Shows a context menu with "Change Icon" and "Quit" options.
-- **Change Icon window**: Opens a custom NSWindow with a butt picker grid. While the window is open, the app appears in the Dock and Cmd+Tab. Closing the window hides the Dock icon.
-- **No Dock icon**: Pure menu bar app normally — no Dock presence, no main window. Configured via `LSUIElement = YES`. Dock icon appears temporarily while the icon picker is open.
+- **Change Icon popover**: Opens an NSPopover attached below the menu bar icon with a butt picker grid. Dismisses on click outside or Escape.
+- **No Dock icon**: Pure menu bar app — no Dock presence, no main window. Configured via `LSUIElement = YES`.
 
 ## Architecture
 
 Hybrid SwiftUI + AppKit. SwiftUI provides the `@main` app lifecycle, but all menu bar logic is in AppKit via `@NSApplicationDelegateAdaptor`.
 
 - `pattiSpecialButtonApp.swift` — App entry point. Wires up AppDelegate, uses `Settings { EmptyView() }` as a no-window scene (SwiftUI requires at least one Scene).
-- `AppDelegate.swift` — Core logic: `NSStatusItem` setup, `DispatchSourceTimer` animation, `AVAudioPlayer` playback with hold-to-play, icon picker window management, butt switching via UserDefaults.
+- `AppDelegate.swift` — Core logic: `NSStatusItem` setup, `DispatchSourceTimer` animation, `AVAudioPlayer` playback with hold-to-play, icon picker popover management, butt switching via UserDefaults.
 - `StatusItemMouseView` (in AppDelegate.swift) — Transparent `NSView` subclass overlaid on the status bar button. Intercepts `mouseDown`/`mouseUp`/`rightMouseUp` to bypass `NSStatusBarButton`'s tracking loop which swallows `mouseUp` events.
 - `ButtPickerView.swift` — SwiftUI view for the icon picker grid (TODO: currently placeholder, full grid in Step 2).
 - `AnimatedButtCell.swift` — SwiftUI cell for a single butt in the picker grid (TODO: Step 2).
@@ -31,11 +31,9 @@ Hybrid SwiftUI + AppKit. SwiftUI provides the `@main` app lifecycle, but all men
 
 `AppDelegate.loadFrameImages()` loads frames from the app bundle at runtime using `Bundle.main.url(forResource:withExtension:subdirectory:)`. It looks up the selected butt's subfolder inside `ButtFrames/`, then iterates `frame_00.png`, `frame_01.png`, ... until no more files are found. Each frame is set to 20x20 points, marked `isTemplate = true` for automatic menu bar tinting. The frame count is dynamic per butt (not hardcoded).
 
-### How the icon picker window works
+### How the icon picker popover works
 
-The icon picker is a plain `NSWindow` managed by `AppDelegate`, NOT a SwiftUI Settings scene. SwiftUI's Settings scene cannot be opened programmatically from AppKit code on macOS 14+ (runtime error: "Please use SettingsLink for opening the Settings scene"). Using our own NSWindow with `NSHostingView(rootView: ButtPickerView())` gives full control with no bridging hacks.
-
-The window spawns centered below the menu bar icon (clamped to screen edges). While open, `NSApp.setActivationPolicy(.regular)` makes the app visible in the Dock and Cmd+Tab. On close, `.accessory` hides it again. The window is created once and reused.
+The icon picker is an `NSPopover` with `.transient` behavior, shown relative to the status item button. It auto-dismisses on click outside or Escape, positions itself automatically below the menu bar icon, and never shows in the Dock or Cmd+Tab. The popover's `contentViewController` is an `NSHostingController` wrapping `ButtPickerView()`. Selecting "Change Icon" while the popover is already open toggles it closed.
 
 ### How butt switching works
 

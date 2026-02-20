@@ -35,14 +35,11 @@ class FrameAnimator: ObservableObject {
     func start() {
         guard frames.count > 1 else { return }
         frameIndex = 0
-        let t = Timer.scheduledTimer(withTimeInterval: frameDuration, repeats: true) { [weak self] _ in
+        timer = Timer.scheduledTimer(withTimeInterval: frameDuration, repeats: true) { [weak self] _ in
             guard let self else { return }
             self.frameIndex = (self.frameIndex + 1) % self.frames.count
             self.currentFrame = self.frames[self.frameIndex]
         }
-        // .common mode keeps firing during scroll/drag (RunLoop enters .tracking mode during UI interaction)
-        RunLoop.current.add(t, forMode: .common)
-        timer = t
     }
 
     func stop() {

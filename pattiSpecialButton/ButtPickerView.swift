@@ -19,6 +19,6 @@ struct ButtPickerView: View {
             }
             .padding(16)
         }
-        .frame(minWidth: 500, minHeight: 400)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
