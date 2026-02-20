@@ -3,13 +3,15 @@ import SwiftUI
 struct AnimatedButtCell: View {
     let butt: ButtInfo
     let isSelected: Bool
+    var isFocused: Bool = false
     let onTap: () -> Void
 
     @StateObject private var animator: FrameAnimator
 
-    init(butt: ButtInfo, isSelected: Bool, onTap: @escaping () -> Void) {
+    init(butt: ButtInfo, isSelected: Bool, isFocused: Bool = false, onTap: @escaping () -> Void) {
         self.butt = butt
         self.isSelected = isSelected
+        self.isFocused = isFocused
         self.onTap = onTap
         _animator = StateObject(wrappedValue: FrameAnimator(buttId: butt.id))
     }
@@ -36,8 +38,20 @@ struct AnimatedButtCell: View {
         .padding(8)
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .fill(isSelected ? Color.accentColor.opacity(0.2) : Color.clear)
+                .fill(isFocused ? Color.accentColor.opacity(0.2) : Color.clear)
         )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(isFocused ? Color.accentColor : Color.clear, lineWidth: 2)
+        )
+        .overlay(alignment: .topTrailing) {
+            if isSelected {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 16))
+                    .foregroundStyle(.white, Color.accentColor)
+                    .padding(4)
+            }
+        }
         .contentShape(Rectangle())
         .onTapGesture { onTap() }
         .onAppear { animator.start() }

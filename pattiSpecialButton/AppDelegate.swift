@@ -190,12 +190,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         popover.contentViewController = NSHostingController(rootView: ButtPickerView())
         iconPickerPopover = popover
 
-        // Activate before showing so the popover's content is immediately
-        // interactive — otherwise the first click just activates the app.
-        NSApp.activate(ignoringOtherApps: true)
-
         guard let button = statusItem.button else { return }
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+        // Make just the popover's window key — gives it focus for interactivity
+        // and .transient dismissal without activating the entire app (which causes
+        // "Show Desktop" on desktop click and Space-switching on fullscreen).
+        popover.contentViewController?.view.window?.makeKey()
     }
 
     // MARK: - Animation
