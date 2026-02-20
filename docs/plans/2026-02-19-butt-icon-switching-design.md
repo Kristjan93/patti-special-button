@@ -4,9 +4,17 @@
 
 Allow users to choose from 47 different animated butt icons for the menu bar, replacing the single hardcoded async-butt.
 
-## Status: Phase 1 complete
+## Status: Phase 2 Step 1 complete, Step 2 in progress
 
-The asset pipeline and frame loading are done. The app loads frames from `ButtFrames/` at runtime. What remains is the UI for switching butts (Phase 2).
+- **Phase 1** (done): Asset pipeline and runtime frame loading.
+- **Phase 2 Step 1** (done): Custom NSWindow icon picker with activation policy switching. See `2026-02-20-step1-custom-icon-picker-window.md`.
+- **Phase 2 Step 2** (next): Unified 160x160 frames, FrameAnimator, full picker grid. See `2026-02-20-step2-unified-frames-and-picker-grid.md`.
+
+### Architecture change from original design
+
+The original plan used SwiftUI's `Settings` scene for the picker window. This doesn't work — macOS 14+ blocks programmatic opening from AppKit with "Please use SettingsLink for opening the Settings scene." We now use a plain `NSWindow` managed by `AppDelegate` with `NSHostingView(rootView: ButtPickerView())`. Full control, no bridging hacks.
+
+The original plan also used `GIFAnimator` + `NSBitmapImageRep` to animate source GIFs in the picker at runtime. This is being replaced by `FrameAnimator` that loads pre-processed PNGs from `ButtFrames/` — same frames the menu bar uses, just displayed at a larger size. The Python script is being updated to generate 160x160 frames (up from 40x40) so both menu bar (downscaled to 20pt) and picker (displayed at 80pt) look crisp. This eliminates runtime GIF decoding and removes source GIFs from the app bundle.
 
 ## What was built
 
