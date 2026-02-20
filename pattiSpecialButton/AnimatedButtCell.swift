@@ -13,7 +13,7 @@ struct AnimatedButtCell: View {
         self.isSelected = isSelected
         self.isFocused = isFocused
         self.onTap = onTap
-        _animator = StateObject(wrappedValue: FrameAnimator(buttId: butt.id))
+        _animator = StateObject(wrappedValue: FrameAnimator(buttInfo: butt))
     }
 
     var body: some View {

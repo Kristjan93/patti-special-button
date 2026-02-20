@@ -3,237 +3,780 @@
     {
       "id": "alien-butt",
       "name": "Alien Butt",
-      "frameCount": 16
+      "frameCount": 16,
+      "frameDelays": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ]
     },
     {
       "id": "async-butt",
       "name": "Async Butt",
-      "frameCount": 6
+      "frameCount": 6,
+      "frameDelays": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ]
     },
     {
       "id": "bongo-butt",
       "name": "Bongo Butt",
-      "frameCount": 17
+      "frameCount": 17,
+      "frameDelays": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ]
     },
     {
       "id": "bouncing-butt-ii",
       "name": "Bouncing Butt II",
-      "frameCount": 6
+      "frameCount": 6,
+      "frameDelays": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ]
     },
     {
       "id": "bouncy-butt",
       "name": "Bouncy Butt",
-      "frameCount": 4
+      "frameCount": 4,
+      "frameDelays": [
+        100,
+        100,
+        100,
+        100
+      ]
     },
     {
       "id": "business",
       "name": "Business",
-      "frameCount": 4
+      "frameCount": 4,
+      "frameDelays": [
+        130,
+        120,
+        130,
+        130
+      ]
     },
     {
       "id": "censoredbutt",
       "name": "Censored Butt",
-      "frameCount": 5
+      "frameCount": 5,
+      "frameDelays": [
+        130,
+        120,
+        130,
+        120,
+        120
+      ]
     },
     {
       "id": "clapping-butt",
       "name": "Clapping Butt",
-      "frameCount": 5
+      "frameCount": 5,
+      "frameDelays": [
+        100,
+        100,
+        100,
+        100,
+        100
+      ]
     },
     {
       "id": "cow-butt",
       "name": "Cow Butt",
-      "frameCount": 4
+      "frameCount": 4,
+      "frameDelays": [
+        100,
+        100,
+        100,
+        100
+      ]
     },
     {
       "id": "diver-butt",
       "name": "Diver Butt",
-      "frameCount": 11
+      "frameCount": 11,
+      "frameDelays": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ]
     },
     {
       "id": "easterbunny",
       "name": "Easter Bunny",
-      "frameCount": 4
+      "frameCount": 4,
+      "frameDelays": [
+        130,
+        120,
+        130,
+        130
+      ]
     },
     {
       "id": "einsteinbutt",
       "name": "Einstein Butt",
-      "frameCount": 5
+      "frameCount": 5,
+      "frameDelays": [
+        130,
+        120,
+        130,
+        120,
+        120
+      ]
     },
     {
       "id": "flaming-butt",
       "name": "Flaming Butt",
-      "frameCount": 3
+      "frameCount": 3,
+      "frameDelays": [
+        100,
+        100,
+        100
+      ]
     },
     {
       "id": "flexing-butt",
       "name": "Flexing Butt",
-      "frameCount": 9
+      "frameCount": 9,
+      "frameDelays": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ]
     },
     {
       "id": "frankenstein-butt",
       "name": "Frankenstein Butt",
-      "frameCount": 12
+      "frameCount": 12,
+      "frameDelays": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ]
     },
     {
       "id": "frida-butthlo",
       "name": "Frida Butthlo",
-      "frameCount": 4
+      "frameCount": 4,
+      "frameDelays": [
+        200,
+        100,
+        100,
+        100
+      ]
     },
     {
       "id": "glassesbutt",
       "name": "Glasses Butt",
-      "frameCount": 5
+      "frameCount": 5,
+      "frameDelays": [
+        130,
+        120,
+        130,
+        120,
+        120
+      ]
     },
     {
       "id": "hairybutt",
       "name": "Hairy Butt",
-      "frameCount": 5
+      "frameCount": 5,
+      "frameDelays": [
+        130,
+        120,
+        130,
+        120,
+        120
+      ]
     },
     {
       "id": "heart-eyes-butt",
       "name": "Heart Eyes Butt",
-      "frameCount": 6
+      "frameCount": 6,
+      "frameDelays": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ]
     },
     {
       "id": "inception-butt",
       "name": "Inception Butt",
-      "frameCount": 17
+      "frameCount": 17,
+      "frameDelays": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ]
     },
     {
       "id": "infinite-butt",
       "name": "Infinite Butt",
-      "frameCount": 8
+      "frameCount": 8,
+      "frameDelays": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ]
     },
     {
       "id": "jeans-butt",
       "name": "Jeans Butt",
-      "frameCount": 16
+      "frameCount": 16,
+      "frameDelays": [
+        500,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        1000,
+        100,
+        100,
+        100,
+        100
+      ]
     },
     {
       "id": "keynotebutt",
       "name": "Keynote Butt",
-      "frameCount": 4
+      "frameCount": 4,
+      "frameDelays": [
+        1000,
+        1000,
+        1000,
+        1000
+      ]
     },
     {
       "id": "kissing-butt",
       "name": "Kissing Butt",
-      "frameCount": 13
+      "frameCount": 13,
+      "frameDelays": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ]
     },
     {
       "id": "magic-butt",
       "name": "Magic Butt",
-      "frameCount": 27
+      "frameCount": 27,
+      "frameDelays": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        1000,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ]
     },
     {
       "id": "no-butt",
       "name": "No Butt",
-      "frameCount": 10
+      "frameCount": 10,
+      "frameDelays": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ]
     },
     {
       "id": "pabsbutt",
       "name": "Pabs Butt",
-      "frameCount": 21
+      "frameCount": 21,
+      "frameDelays": [
+        130,
+        120,
+        130,
+        120,
+        130,
+        120,
+        130,
+        120,
+        130,
+        120,
+        130,
+        120,
+        130,
+        120,
+        130,
+        120,
+        130,
+        120,
+        130,
+        120,
+        120
+      ]
     },
     {
       "id": "pirate-butt",
       "name": "Pirate Butt",
-      "frameCount": 20
+      "frameCount": 20,
+      "frameDelays": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ]
     },
     {
       "id": "pointing-butt",
       "name": "Pointing Butt",
-      "frameCount": 6
+      "frameCount": 6,
+      "frameDelays": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ]
     },
     {
       "id": "romantic-butt",
       "name": "Romantic Butt",
-      "frameCount": 13
+      "frameCount": 13,
+      "frameDelays": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ]
     },
     {
       "id": "samba-butt",
       "name": "Samba Butt",
-      "frameCount": 20
+      "frameCount": 20,
+      "frameDelays": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ]
     },
     {
       "id": "seeing-butt",
       "name": "Seeing Butt",
-      "frameCount": 16
+      "frameCount": 16,
+      "frameDelays": [
+        100,
+        100,
+        100,
+        500,
+        100,
+        100,
+        500,
+        100,
+        100,
+        500,
+        100,
+        100,
+        500,
+        100,
+        100,
+        500
+      ]
     },
     {
       "id": "shiny-butt",
       "name": "Shiny Butt",
-      "frameCount": 15
+      "frameCount": 15,
+      "frameDelays": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ]
     },
     {
       "id": "shivering-butt",
       "name": "Shivering Butt",
-      "frameCount": 7
+      "frameCount": 7,
+      "frameDelays": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        500
+      ]
     },
     {
       "id": "smallbutt",
       "name": "Small Butt",
-      "frameCount": 5
+      "frameCount": 5,
+      "frameDelays": [
+        130,
+        120,
+        130,
+        120,
+        120
+      ]
     },
     {
       "id": "space-butt",
       "name": "Space Butt",
-      "frameCount": 9
+      "frameCount": 9,
+      "frameDelays": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ]
     },
     {
       "id": "superhero-butt",
       "name": "Superhero Butt",
-      "frameCount": 22
+      "frameCount": 22,
+      "frameDelays": [
+        200,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ]
     },
     {
       "id": "sweaty-butt",
       "name": "Sweaty Butt",
-      "frameCount": 6
+      "frameCount": 6,
+      "frameDelays": [
+        130,
+        120,
+        130,
+        120,
+        130,
+        130
+      ]
     },
     {
       "id": "swinging-butt",
       "name": "Swinging Butt",
-      "frameCount": 7
+      "frameCount": 7,
+      "frameDelays": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ]
     },
     {
       "id": "thunderbutt",
       "name": "Thunder Butt",
-      "frameCount": 7
+      "frameCount": 7,
+      "frameDelays": [
+        130,
+        120,
+        130,
+        120,
+        130,
+        120,
+        120
+      ]
     },
     {
       "id": "triple-butt",
       "name": "Triple Butt",
-      "frameCount": 10
+      "frameCount": 10,
+      "frameDelays": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ]
     },
     {
       "id": "underwater-butt",
       "name": "Underwater Butt",
-      "frameCount": 10
+      "frameCount": 10,
+      "frameDelays": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ]
     },
     {
       "id": "ux-designer-butt",
       "name": "UX Designer Butt",
-      "frameCount": 5
-    },
-    {
-      "id": "vampire",
-      "name": "Vampire",
-      "frameCount": 6
+      "frameCount": 5,
+      "frameDelays": [
+        250,
+        250,
+        250,
+        250,
+        250
+      ]
     },
     {
       "id": "vampire-butt",
       "name": "Vampire Butt",
-      "frameCount": 1
+      "frameCount": 6,
+      "frameDelays": [
+        80,
+        80,
+        80,
+        80,
+        80,
+        80
+      ]
     },
     {
       "id": "werewolf-putt",
       "name": "Werewolf Putt",
-      "frameCount": 18
+      "frameCount": 18,
+      "frameDelays": [
+        500,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        1000,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        500
+      ]
     },
     {
       "id": "zebra-butt",
       "name": "Zebra Butt",
-      "frameCount": 7
+      "frameCount": 7,
+      "frameDelays": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ]
     }
   ]
 }

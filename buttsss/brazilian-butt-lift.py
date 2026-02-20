@@ -63,21 +63,28 @@ def display_name(name: str) -> str:
     return " ".join(w[0].upper() + w[1:] for w in spaced.split() if w)
 
 
-def extract_frames(gif_path: Path) -> list[Image.Image]:
-    """Extract all frames from an animated GIF, handling disposal correctly."""
+def extract_frames(gif_path: Path) -> tuple[list[Image.Image], list[int]]:
+    """Extract all frames and per-frame delays from an animated GIF."""
     img = Image.open(gif_path)
     frames = []
+    delays = []
 
     # Build a canvas to composite frames onto (handles disposal methods)
     canvas = Image.new("RGBA", img.size, (255, 255, 255, 255))
 
     for i in range(getattr(img, "n_frames", 1)):
         img.seek(i)
+        # GIF stores per-frame delay in the Graphic Control Extension block.
+        # Pillow exposes it via img.info['duration'] after each seek().
+        delay = img.info.get("duration", 100)
+        if delay < 10:
+            delay = 100
+        delays.append(delay)
         frame = img.convert("RGBA")
         canvas.paste(frame, (0, 0), frame)
         frames.append(canvas.copy())
 
-    return frames
+    return frames, delays
 
 
 def process_frame(frame: Image.Image) -> Image.Image:
@@ -114,7 +121,7 @@ def process_gif(gif_path: Path) -> dict | None:
     out_dir = OUTPUT_DIR / slug
 
     try:
-        frames = extract_frames(gif_path)
+        frames, delays = extract_frames(gif_path)
     except Exception as e:
         print(f"  ERROR extracting {gif_path.name}: {e}", file=sys.stderr)
         return None
@@ -126,7 +133,7 @@ def process_gif(gif_path: Path) -> dict | None:
         out_path = out_dir / f"frame_{i:02d}.png"
         processed.save(out_path, "PNG")
 
-    return {"id": slug, "name": name, "frameCount": len(frames)}
+    return {"id": slug, "name": name, "frameCount": len(frames), "frameDelays": delays}
 
 
 def main():

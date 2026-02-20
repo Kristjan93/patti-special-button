@@ -2,52 +2,63 @@ import AppKit
 import Combine
 
 class FrameAnimator: ObservableObject {
-    @Published var currentFrame: NSImage?
+    @Published var currentFrameIndex: Int = 0
 
-    private var frames: [NSImage] = []
-    private var frameIndex = 0
-    private var timer: Timer?
-    private let frameDuration: TimeInterval = 0.1
+    let frames: [NSImage]
+    private let frameDelays: [TimeInterval]
+    private var timer: DispatchSourceTimer?
 
-    init(buttId: String) {
-        loadFrames(buttId: buttId)
+    var currentFrame: NSImage? {
+        frames.isEmpty ? nil : frames[currentFrameIndex]
     }
 
-    private func loadFrames(buttId: String) {
-        guard let buttDir = Bundle.main.url(
-            forResource: buttId, withExtension: nil, subdirectory: "ButtFrames"
-        ) else { return }
+    init(buttInfo: ButtInfo) {
+        var loaded: [NSImage] = []
 
-        var i = 0
-        while true {
-            let url = buttDir.appendingPathComponent(String(format: "frame_%02d.png", i))
-            guard FileManager.default.fileExists(atPath: url.path) else { break }
-            guard let image = NSImage(contentsOf: url) else { break }
-            frames.append(image)
-            i += 1
+        if let buttDir = Bundle.main.url(
+            forResource: buttInfo.id, withExtension: nil, subdirectory: "ButtFrames"
+        ) {
+            var i = 0
+            while true {
+                let url = buttDir.appendingPathComponent(String(format: "frame_%02d.png", i))
+                guard FileManager.default.fileExists(atPath: url.path),
+                      let image = NSImage(contentsOf: url) else { break }
+                loaded.append(image)
+                i += 1
+            }
         }
 
-        if !frames.isEmpty {
-            currentFrame = frames[0]
-        }
+        self.frames = loaded
+        self.frameDelays = buttInfo.frameDelays.map { max(Double($0) / 1000.0, 0.01) }
     }
 
     func start() {
         guard frames.count > 1 else { return }
-        frameIndex = 0
-        timer = Timer.scheduledTimer(withTimeInterval: frameDuration, repeats: true) { [weak self] _ in
-            guard let self else { return }
-            self.frameIndex = (self.frameIndex + 1) % self.frames.count
-            self.currentFrame = self.frames[self.frameIndex]
-        }
+        currentFrameIndex = 0
+        scheduleNext()
     }
 
     func stop() {
-        timer?.invalidate()
+        timer?.cancel()
         timer = nil
     }
 
+    private func scheduleNext() {
+        let t = DispatchSource.makeTimerSource(queue: .main)
+        t.schedule(deadline: .now() + frameDelays[currentFrameIndex])
+        t.setEventHandler { [weak self] in self?.advanceFrame() }
+        t.resume()
+        timer = t
+    }
+
+    private func advanceFrame() {
+        currentFrameIndex = (currentFrameIndex + 1) % frames.count
+        // Reschedule with the new frame's delay
+        timer?.cancel()
+        scheduleNext()
+    }
+
     deinit {
-        timer?.invalidate()
+        timer?.cancel()
     }
 }

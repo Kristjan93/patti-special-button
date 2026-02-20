@@ -1,5 +1,6 @@
 import AppKit
 import AVFoundation
+import Combine
 import SwiftUI
 
 // Transparent view placed on top of the status bar button to intercept mouse events.
@@ -18,11 +19,10 @@ class StatusItemMouseView: NSView {
 class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private var statusItem: NSStatusItem!
-    private var animationTimer: DispatchSourceTimer?
-    private var frameImages: [NSImage] = []
-    private var currentFrameIndex = 0
+    private var animator: FrameAnimator?
+    private var menuBarFrames: [NSImage] = []
+    private var animatorSubscription: AnyCancellable?
 
-    private let frameDuration: TimeInterval = 0.1
     private let minimumPlayDuration: TimeInterval = 0.5
 
     private var audioPlayer: AVAudioPlayer?
@@ -32,6 +32,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var defaultsObservation: NSObjectProtocol?
     private var iconPickerPopover: NSPopover?
 
+    private var buttLookup: [String: ButtInfo] = [:]
+
     private var currentButtId: String {
         UserDefaults.standard.string(forKey: "selectedButtId") ?? "async-butt"
     }
@@ -39,9 +41,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     // MARK: - App Lifecycle
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        loadFrameImages()
+        buttLookup = Dictionary(uniqueKeysWithValues: loadButtManifest().map { ($0.id, $0) })
         setupStatusItem()
-        startAnimation()
+        loadButt()
 
         defaultsObservation = NotificationCenter.default.addObserver(
             forName: UserDefaults.didChangeNotification,
@@ -60,43 +62,35 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private func handleButtChange() {
         let newId = currentButtId
         guard newId != lastLoadedButtId else { return }
-        reloadButt()
+        loadButt()
     }
 
-    private func reloadButt() {
-        animationTimer?.cancel()
-        animationTimer = nil
-        frameImages.removeAll()
-        currentFrameIndex = 0
-        loadFrameImages()
-        startAnimation()
-    }
-
-    // MARK: - Frame Loading
-
-    private func loadFrameImages() {
+    private func loadButt() {
         let buttId = currentButtId
-        guard let buttDir = Bundle.main.url(forResource: buttId, withExtension: nil, subdirectory: "ButtFrames") else {
-            fatalError("Missing ButtFrames/\(buttId) in bundle")
+        guard let buttInfo = buttLookup[buttId] else {
+            fatalError("Unknown butt id: \(buttId)")
         }
 
-        var i = 0
-        while true {
-            let url = buttDir.appendingPathComponent(String(format: "frame_%02d.png", i))
-            guard FileManager.default.fileExists(atPath: url.path) else { break }
-            guard let image = NSImage(contentsOf: url) else {
-                fatalError("Failed to load frame \(i) for \(buttId)")
+        animator?.stop()
+
+        let newAnimator = FrameAnimator(buttInfo: buttInfo)
+
+        // Build menu-bar-ready copies (20x20, template) from the shared frames
+        menuBarFrames = newAnimator.frames.map { original in
+            let copy = original.copy() as! NSImage
+            copy.size = NSSize(width: 20, height: 20)
+            copy.isTemplate = true
+            return copy
+        }
+
+        animatorSubscription = newAnimator.$currentFrameIndex
+            .sink { [weak self] index in
+                guard let self, index < self.menuBarFrames.count else { return }
+                self.statusItem.button?.image = self.menuBarFrames[index]
             }
-            image.size = NSSize(width: 20, height: 20)
-            image.isTemplate = true
-            frameImages.append(image)
-            i += 1
-        }
 
-        if frameImages.isEmpty {
-            fatalError("No frames found in ButtFrames/\(buttId)")
-        }
-
+        animator = newAnimator
+        newAnimator.start()
         lastLoadedButtId = buttId
     }
 
@@ -106,7 +100,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
 
         guard let button = statusItem.button else { return }
-        button.image = frameImages[0]
+        button.image = menuBarFrames.first
         button.imagePosition = .imageOnly
 
         let mouseView = StatusItemMouseView(frame: button.bounds)
@@ -198,18 +192,4 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         popover.contentViewController?.view.window?.makeKey()
     }
 
-    // MARK: - Animation
-
-    private func startAnimation() {
-        let timer = DispatchSource.makeTimerSource(queue: .main)
-        timer.schedule(deadline: .now(), repeating: frameDuration)
-        timer.setEventHandler { [weak self] in self?.advanceFrame() }
-        timer.resume()
-        animationTimer = timer
-    }
-
-    private func advanceFrame() {
-        currentFrameIndex = (currentFrameIndex + 1) % frameImages.count
-        statusItem.button?.image = frameImages[currentFrameIndex]
-    }
 }
