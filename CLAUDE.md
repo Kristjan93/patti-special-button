@@ -18,9 +18,9 @@ Hybrid SwiftUI + AppKit. SwiftUI provides the `@main` app lifecycle, but all men
 - `pattiSpecialButtonApp.swift` — App entry point. Wires up AppDelegate, uses `Settings { EmptyView() }` as a no-window scene (SwiftUI requires at least one Scene).
 - `AppDelegate.swift` — Core logic: `NSStatusItem` setup, `DispatchSourceTimer` animation, `AVAudioPlayer` playback with hold-to-play, icon picker popover management, butt switching via UserDefaults.
 - `StatusItemMouseView` (in AppDelegate.swift) — Transparent `NSView` subclass overlaid on the status bar button. Intercepts `mouseDown`/`mouseUp`/`rightMouseUp` to bypass `NSStatusBarButton`'s tracking loop which swallows `mouseUp` events.
-- `ButtPickerView.swift` — SwiftUI view for the icon picker grid (TODO: currently placeholder, full grid in Step 2).
-- `AnimatedButtCell.swift` — SwiftUI cell for a single butt in the picker grid (TODO: Step 2).
-- `GIFAnimator.swift` — Loads and animates GIFs via NSBitmapImageRep (TODO: will be replaced by FrameAnimator in Step 2).
+- `ButtPickerView.swift` — SwiftUI view for the icon picker grid. 4-column `LazyVGrid` with arrow key navigation (`.onKeyPress`), `ScrollViewReader` for scroll-to-selected, and `@AppStorage` for butt selection.
+- `AnimatedButtCell.swift` — SwiftUI cell for a single butt in the picker grid. Shows animated preview via `FrameAnimator`, checkmark badge for selected butt, blue highlight for keyboard focus.
+- `FrameAnimator.swift` — `ObservableObject` that loads PNG frames from the bundle and cycles through them on a `Timer` for animated previews in the picker grid.
 - `ButtInfo.swift` — Struct decoded from `manifest.json` with id, name, frameCount.
 
 ### Why StatusItemMouseView exists
@@ -33,7 +33,11 @@ Hybrid SwiftUI + AppKit. SwiftUI provides the `@main` app lifecycle, but all men
 
 ### How the icon picker popover works
 
-The icon picker is an `NSPopover` with `.transient` behavior, shown relative to the status item button. It auto-dismisses on click outside or Escape, positions itself automatically below the menu bar icon, and never shows in the Dock or Cmd+Tab. The popover's `contentViewController` is an `NSHostingController` wrapping `ButtPickerView()`. Selecting "Change Icon" while the popover is already open toggles it closed.
+The icon picker is an `NSPopover` with `.transient` behavior, shown relative to the status item button. After showing, `popover.contentViewController?.view.window?.makeKey()` gives the popover focus without activating the app — this avoids "Show Desktop" on desktop click and double-click issues on fullscreen Spaces. The popover auto-dismisses on click outside or Escape, positions itself automatically below the menu bar icon, and never shows in the Dock or Cmd+Tab. Selecting "Change Icon" while the popover is already open toggles it closed.
+
+### Known limitation: NSPopover activation
+
+NSPopover's `.transient` dismissal ideally requires `NSApp.activate()`, but activating an LSUIElement app causes desktop clicks to trigger "Show Desktop" and fullscreen Spaces to misbehave. Using `makeKey()` instead avoids these issues. If `.transient` dismissal ever stops working, the fallback would be switching to an `NSPanel` with `.nonactivatingPanel` style mask (the pattern used by Itsycal and other menu bar apps).
 
 ### How butt switching works
 
@@ -94,7 +98,7 @@ pattiSpecialButton/
     pattiSpecialButtonApp.swift
     ButtPickerView.swift
     AnimatedButtCell.swift
-    GIFAnimator.swift
+    FrameAnimator.swift
     ButtInfo.swift
     Assets.xcassets/
   docs/plans/                      <- design docs
