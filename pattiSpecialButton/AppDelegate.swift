@@ -1,5 +1,6 @@
 import AppKit
 import AVFoundation
+import SwiftUI
 
 // Transparent view placed on top of the status bar button to intercept mouse events.
 // NSStatusBarButton's internal tracking loop swallows mouseUp, but an NSView
@@ -21,7 +22,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var frameImages: [NSImage] = []
     private var currentFrameIndex = 0
 
-    private let currentButtId = "async-butt"
     private let frameDuration: TimeInterval = 0.1
     private let minimumPlayDuration: TimeInterval = 0.5
 
@@ -29,19 +29,60 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var playbackStartTime: Date?
     private var pendingStop: DispatchWorkItem?
 
+    private var defaultsObservation: NSObjectProtocol?
+    private var iconPickerWindow: NSWindow?
+
+    private var currentButtId: String {
+        UserDefaults.standard.string(forKey: "selectedButtId") ?? "async-butt"
+    }
+
     // MARK: - App Lifecycle
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         loadFrameImages()
         setupStatusItem()
         startAnimation()
+
+        defaultsObservation = NotificationCenter.default.addObserver(
+            forName: UserDefaults.didChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.handleButtChange()
+        }
+
+    }
+
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        showIconPicker()
+        return true
+    }
+
+    // MARK: - Butt Switching
+
+    private var lastLoadedButtId: String?
+
+    private func handleButtChange() {
+        let newId = currentButtId
+        guard newId != lastLoadedButtId else { return }
+        reloadButt()
+    }
+
+    private func reloadButt() {
+        animationTimer?.cancel()
+        animationTimer = nil
+        frameImages.removeAll()
+        currentFrameIndex = 0
+        loadFrameImages()
+        startAnimation()
     }
 
     // MARK: - Frame Loading
 
     private func loadFrameImages() {
-        guard let buttDir = Bundle.main.url(forResource: currentButtId, withExtension: nil, subdirectory: "ButtFrames") else {
-            fatalError("Missing ButtFrames/\(currentButtId) in bundle")
+        let buttId = currentButtId
+        guard let buttDir = Bundle.main.url(forResource: buttId, withExtension: nil, subdirectory: "ButtFrames") else {
+            fatalError("Missing ButtFrames/\(buttId) in bundle")
         }
 
         var i = 0
@@ -49,7 +90,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             let url = buttDir.appendingPathComponent(String(format: "frame_%02d.png", i))
             guard FileManager.default.fileExists(atPath: url.path) else { break }
             guard let image = NSImage(contentsOf: url) else {
-                fatalError("Failed to load frame \(i) for \(currentButtId)")
+                fatalError("Failed to load frame \(i) for \(buttId)")
             }
             image.size = NSSize(width: 20, height: 20)
             image.isTemplate = true
@@ -58,8 +99,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
 
         if frameImages.isEmpty {
-            fatalError("No frames found in ButtFrames/\(currentButtId)")
+            fatalError("No frames found in ButtFrames/\(buttId)")
         }
+
+        lastLoadedButtId = buttId
     }
 
     // MARK: - Status Item Setup
@@ -118,13 +161,96 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private func showContextMenu() {
         let menu = NSMenu()
         menu.delegate = self
+
+        let changeIconItem = NSMenuItem(title: "Change Icon", action: #selector(changeIconMenuAction), keyEquivalent: "")
+        changeIconItem.target = self
+        menu.addItem(changeIconItem)
+
+        menu.addItem(NSMenuItem.separator())
         menu.addItem(NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+
         statusItem.menu = menu
         statusItem.button?.performClick(nil)
     }
 
     func menuDidClose(_ menu: NSMenu) {
         statusItem.menu = nil
+    }
+
+    // MARK: - Icon Picker Window
+
+    @objc private func changeIconMenuAction() {
+        showIconPicker()
+    }
+
+    private func showIconPicker() {
+        if let window = iconPickerWindow {
+            window.makeKeyAndOrderFront(nil)
+            NSApp.setActivationPolicy(.regular)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 500, height: 500),
+            styleMask: [.titled, .closable, .resizable],
+            backing: .buffered,
+            defer: false
+        )
+        window.title = "Change Icon"
+        window.minSize = NSSize(width: 400, height: 300)
+        window.contentView = NSHostingView(rootView: ButtPickerView())
+        window.isReleasedWhenClosed = false
+        positionWindowBelowStatusItem(window)
+        iconPickerWindow = window
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(iconPickerWindowWillClose(_:)),
+            name: NSWindow.willCloseNotification,
+            object: window
+        )
+
+        if let firstFrame = frameImages.first {
+            NSApp.applicationIconImage = firstFrame
+        }
+
+        NSApp.setActivationPolicy(.regular)
+        NSApp.activate(ignoringOtherApps: true)
+        window.makeKeyAndOrderFront(nil)
+    }
+
+    private func positionWindowBelowStatusItem(_ window: NSWindow) {
+        let padding: CGFloat = 8
+
+        guard let buttonWindow = statusItem.button?.window else {
+            window.center()
+            return
+        }
+
+        let buttonFrame = buttonWindow.frame
+        let buttonMidX = buttonFrame.midX
+        let windowSize = window.frame.size
+
+        // Center horizontally under the status item
+        var x = buttonMidX - windowSize.width / 2
+        // Top of window just below the menu bar with padding
+        let y = buttonFrame.minY - windowSize.height - padding
+
+        // Clamp to screen bounds so it doesn't clip off the right (or left) edge
+        if let screen = NSScreen.main ?? NSScreen.screens.first {
+            let screenFrame = screen.visibleFrame
+            x = max(screenFrame.minX + padding, x)
+            x = min(screenFrame.maxX - windowSize.width - padding, x)
+        }
+
+        window.setFrameOrigin(NSPoint(x: x, y: y))
+    }
+
+    @objc private func iconPickerWindowWillClose(_ notification: Notification) {
+        DispatchQueue.main.async {
+            NSApp.setActivationPolicy(.accessory)
+        }
     }
 
     // MARK: - Animation

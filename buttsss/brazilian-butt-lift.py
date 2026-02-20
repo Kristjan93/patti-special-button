@@ -119,7 +119,7 @@ def process_gif(gif_path: Path) -> dict | None:
         out_path = out_dir / f"frame_{i:02d}.png"
         processed.save(out_path, "PNG")
 
-    return {"id": slug, "name": name, "frameCount": len(frames)}
+    return {"id": slug, "name": name, "frameCount": len(frames), "gifFilename": gif_path.name}
 
 
 def main():

@@ -3,237 +3,284 @@
     {
       "id": "alien-butt",
       "name": "Alien Butt",
-      "frameCount": 16
+      "frameCount": 16,
+      "gifFilename": "Alien-Butt.gif"
     },
     {
       "id": "async-butt",
       "name": "async butt",
-      "frameCount": 6
+      "frameCount": 6,
+      "gifFilename": "async-butt.gif"
     },
     {
       "id": "bongo-butt",
       "name": "bongo butt",
-      "frameCount": 17
+      "frameCount": 17,
+      "gifFilename": "bongo-butt.gif"
     },
     {
       "id": "bouncing-butt-ii",
       "name": "bouncing butt II",
-      "frameCount": 6
+      "frameCount": 6,
+      "gifFilename": "bouncing-butt-II.gif"
     },
     {
       "id": "bouncy-butt",
       "name": "bouncy butt",
-      "frameCount": 4
+      "frameCount": 4,
+      "gifFilename": "bouncy-butt.gif"
     },
     {
       "id": "business",
       "name": "Business",
-      "frameCount": 4
+      "frameCount": 4,
+      "gifFilename": "Business.gif"
     },
     {
       "id": "censoredbutt",
       "name": "CensoredButt",
-      "frameCount": 5
+      "frameCount": 5,
+      "gifFilename": "CensoredButt.gif"
     },
     {
       "id": "clapping-butt",
       "name": "clapping butt",
-      "frameCount": 5
+      "frameCount": 5,
+      "gifFilename": "clapping-butt.gif"
     },
     {
       "id": "cow-butt",
       "name": "Cow Butt",
-      "frameCount": 4
+      "frameCount": 4,
+      "gifFilename": "Cow-Butt.gif"
     },
     {
       "id": "diver-butt",
       "name": "Diver Butt",
-      "frameCount": 11
+      "frameCount": 11,
+      "gifFilename": "Diver-Butt.gif"
     },
     {
       "id": "easterbunny",
       "name": "EasterBunny",
-      "frameCount": 4
+      "frameCount": 4,
+      "gifFilename": "EasterBunny.gif"
     },
     {
       "id": "einsteinbutt",
       "name": "EinsteinButt",
-      "frameCount": 5
+      "frameCount": 5,
+      "gifFilename": "EinsteinButt.gif"
     },
     {
       "id": "flaming-butt",
       "name": "flaming butt",
-      "frameCount": 3
+      "frameCount": 3,
+      "gifFilename": "flaming-butt.gif"
     },
     {
       "id": "flexing-butt",
       "name": "flexing butt",
-      "frameCount": 9
+      "frameCount": 9,
+      "gifFilename": "flexing-butt.gif"
     },
     {
       "id": "frankenstein-butt",
       "name": "frankenstein butt",
-      "frameCount": 12
+      "frameCount": 12,
+      "gifFilename": "frankenstein-butt.gif"
     },
     {
       "id": "frida-butthlo",
       "name": "frida butthlo",
-      "frameCount": 4
+      "frameCount": 4,
+      "gifFilename": "frida-butthlo.gif"
     },
     {
       "id": "glassesbutt",
       "name": "GlassesButt",
-      "frameCount": 5
+      "frameCount": 5,
+      "gifFilename": "GlassesButt.gif"
     },
     {
       "id": "hairybutt",
       "name": "HairyButt",
-      "frameCount": 5
+      "frameCount": 5,
+      "gifFilename": "HairyButt.gif"
     },
     {
       "id": "heart-eyes-butt",
       "name": "Heart Eyes Butt",
-      "frameCount": 6
+      "frameCount": 6,
+      "gifFilename": "Heart-Eyes-Butt.gif"
     },
     {
       "id": "inception-butt",
       "name": "inception butt",
-      "frameCount": 17
+      "frameCount": 17,
+      "gifFilename": "inception-butt.gif"
     },
     {
       "id": "infinite-butt",
       "name": "infinite butt",
-      "frameCount": 8
+      "frameCount": 8,
+      "gifFilename": "infinite-butt.gif"
     },
     {
       "id": "jeans-butt",
       "name": "Jeans Butt",
-      "frameCount": 16
+      "frameCount": 16,
+      "gifFilename": "Jeans-Butt.gif"
     },
     {
       "id": "keynotebutt",
       "name": "KeynoteButt",
-      "frameCount": 4
+      "frameCount": 4,
+      "gifFilename": "KeynoteButt.gif"
     },
     {
       "id": "kissing-butt",
       "name": "kissing butt",
-      "frameCount": 13
+      "frameCount": 13,
+      "gifFilename": "kissing-butt.gif"
     },
     {
       "id": "magic-butt",
       "name": "Magic Butt",
-      "frameCount": 27
+      "frameCount": 27,
+      "gifFilename": "Magic-Butt.gif"
     },
     {
       "id": "no-butt",
       "name": "no butt",
-      "frameCount": 10
+      "frameCount": 10,
+      "gifFilename": "no-butt.gif"
     },
     {
       "id": "pabsbutt",
       "name": "PabsButt",
-      "frameCount": 21
+      "frameCount": 21,
+      "gifFilename": "PabsButt.gif"
     },
     {
       "id": "pirate-butt",
       "name": "pirate butt",
-      "frameCount": 20
+      "frameCount": 20,
+      "gifFilename": "pirate-butt.gif"
     },
     {
       "id": "pointing-butt",
       "name": "pointing butt",
-      "frameCount": 6
+      "frameCount": 6,
+      "gifFilename": "pointing-butt.gif"
     },
     {
       "id": "romantic-butt",
       "name": "Romantic Butt",
-      "frameCount": 13
+      "frameCount": 13,
+      "gifFilename": "Romantic-Butt.gif"
     },
     {
       "id": "samba-butt",
       "name": "Samba butt",
-      "frameCount": 20
+      "frameCount": 20,
+      "gifFilename": "Samba-butt.gif"
     },
     {
       "id": "seeing-butt",
       "name": "seeing butt",
-      "frameCount": 16
+      "frameCount": 16,
+      "gifFilename": "seeing-butt.gif"
     },
     {
       "id": "shiny-butt",
       "name": "shiny butt",
-      "frameCount": 15
+      "frameCount": 15,
+      "gifFilename": "shiny-butt.gif"
     },
     {
       "id": "shivering-butt",
       "name": "Shivering butt",
-      "frameCount": 7
+      "frameCount": 7,
+      "gifFilename": "Shivering-butt.gif"
     },
     {
       "id": "smallbutt",
       "name": "SmallButt",
-      "frameCount": 5
+      "frameCount": 5,
+      "gifFilename": "SmallButt.gif"
     },
     {
       "id": "space-butt",
       "name": "space butt",
-      "frameCount": 9
+      "frameCount": 9,
+      "gifFilename": "space-butt.gif"
     },
     {
       "id": "superhero-butt",
       "name": "Superhero butt",
-      "frameCount": 22
+      "frameCount": 22,
+      "gifFilename": "Superhero-butt.gif"
     },
     {
       "id": "sweaty-butt",
       "name": "Sweaty butt",
-      "frameCount": 6
+      "frameCount": 6,
+      "gifFilename": "Sweaty-butt.gif"
     },
     {
       "id": "swinging-butt",
       "name": "swinging butt",
-      "frameCount": 7
+      "frameCount": 7,
+      "gifFilename": "swinging-butt.gif"
     },
     {
       "id": "thunderbutt",
       "name": "ThunderButt",
-      "frameCount": 7
+      "frameCount": 7,
+      "gifFilename": "ThunderButt.gif"
     },
     {
       "id": "triple-butt",
       "name": "triple butt",
-      "frameCount": 10
+      "frameCount": 10,
+      "gifFilename": "triple-butt.gif"
     },
     {
       "id": "underwater-butt",
       "name": "underwater butt",
-      "frameCount": 10
+      "frameCount": 10,
+      "gifFilename": "underwater-butt.gif"
     },
     {
       "id": "ux-designer-butt",
       "name": "UX Designer Butt",
-      "frameCount": 5
+      "frameCount": 5,
+      "gifFilename": "UX-Designer-Butt.gif"
     },
     {
       "id": "vampire",
       "name": "vampire",
-      "frameCount": 6
+      "frameCount": 6,
+      "gifFilename": "vampire.gif"
     },
     {
       "id": "vampire-butt",
       "name": "vampire butt",
-      "frameCount": 1
+      "frameCount": 1,
+      "gifFilename": "vampire-butt.gif"
     },
     {
       "id": "werewolf-putt",
       "name": "Werewolf Putt",
-      "frameCount": 18
+      "frameCount": 18,
+      "gifFilename": "Werewolf-Putt.gif"
     },
     {
       "id": "zebra-butt",
       "name": "Zebra butt",
-      "frameCount": 7
+      "frameCount": 7,
+      "gifFilename": "Zebra-butt.gif"
     }
   ]
 }
