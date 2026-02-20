@@ -1,14 +1,15 @@
 # pattiSpecialButton
 
-A macOS menu bar app. A wiggling animated butt lives in the menu bar and plays a fart sound when clicked. Choose from 47 different butt icons by Pablo Stanley.
+A macOS menu bar app. A wiggling animated butt lives in the menu bar and plays a fart sound when clicked. Choose from 46 different butt icons by Pablo Stanley.
 
 ## What it does
 
-- **Menu bar icon**: An animated butt that wiggles continuously in the macOS menu bar (variable frame count per butt, 0.1s per frame).
+- **Menu bar icon**: An animated butt that wiggles continuously in the macOS menu bar (variable frame count per butt, per-frame timing from source GIFs).
 - **Left-click (tap)**: Plays a short fart sound (minimum 0.5s so the first fart always completes).
 - **Left-click (hold)**: Keeps playing farts in a loop for as long as the mouse is held. Loops back to start if held past end of file.
-- **Right-click menu**: Shows a context menu with "Change Icon" and "Quit" options.
-- **Change Icon popover**: Opens an NSPopover attached below the menu bar icon with a butt picker grid. Dismisses on click outside or Escape.
+- **Right-click menu**: Shows a context menu with "Change Icon", "Icon Size" submenu, and "Quit".
+- **Icon Size**: Three sizes — Fun Size (20pt), Regular Rump (22pt), Badonkadonk (24pt). Default: Fun Size. Stored in UserDefaults key `"iconSize"`.
+- **Change Icon popover**: Opens an NSPopover with a butt picker grid. Arrow keys preview the focused butt in the menu bar temporarily. Enter selects and closes. Single click selects (popover stays open). Escape/click outside dismisses and reverts the menu bar to the committed selection.
 - **No Dock icon**: Pure menu bar app — no Dock presence, no main window. Configured via `LSUIElement = YES`.
 
 ## Architecture
@@ -16,24 +17,34 @@ A macOS menu bar app. A wiggling animated butt lives in the menu bar and plays a
 Hybrid SwiftUI + AppKit. SwiftUI provides the `@main` app lifecycle, but all menu bar logic is in AppKit via `@NSApplicationDelegateAdaptor`.
 
 - `pattiSpecialButtonApp.swift` — App entry point. Wires up AppDelegate, uses `Settings { EmptyView() }` as a no-window scene (SwiftUI requires at least one Scene).
-- `AppDelegate.swift` — Core logic: `NSStatusItem` setup, `DispatchSourceTimer` animation, `AVAudioPlayer` playback with hold-to-play, icon picker popover management, butt switching via UserDefaults.
+- `AppDelegate.swift` — Core logic: `NSStatusItem` setup, `AVAudioPlayer` playback with hold-to-play, icon picker popover management, butt/size switching via UserDefaults, preview-on-focus lifecycle via NotificationCenter.
 - `StatusItemMouseView` (in AppDelegate.swift) — Transparent `NSView` subclass overlaid on the status bar button. Intercepts `mouseDown`/`mouseUp`/`rightMouseUp` to bypass `NSStatusBarButton`'s tracking loop which swallows `mouseUp` events.
-- `ButtPickerView.swift` — SwiftUI view for the icon picker grid. 4-column `LazyVGrid` with arrow key navigation (`.onKeyPress`), `ScrollViewReader` for scroll-to-selected, and `@AppStorage` for butt selection.
+- `ButtPickerView.swift` — SwiftUI view for the icon picker grid. 4-column `LazyVGrid` with arrow key navigation (`.onKeyPress`), `ScrollViewReader` for scroll-to-selected, `@AppStorage` for butt selection. Posts `.previewButt` and `.confirmAndClose` notifications for AppDelegate communication.
 - `AnimatedButtCell.swift` — SwiftUI cell for a single butt in the picker grid. Shows animated preview via `FrameAnimator`, checkmark badge for selected butt, blue highlight for keyboard focus.
-- `FrameAnimator.swift` — `ObservableObject` that loads PNG frames from the bundle and cycles through them on a `Timer` for animated previews in the picker grid.
-- `ButtInfo.swift` — Struct decoded from `manifest.json` with id, name, frameCount.
+- `FrameAnimator.swift` — `ObservableObject` that loads PNG frames and per-frame timing from a `ButtInfo`, animates via `DispatchSourceTimer` with per-frame rescheduling. Shared by both `AppDelegate` (menu bar, via Combine subscription to `$currentFrameIndex`) and picker cells (SwiftUI, via `@Published currentFrame`).
+- `ButtInfo.swift` — Struct decoded from `manifest.json` with id, name, frameCount, frameDelays.
 
 ### Why StatusItemMouseView exists
 
 `NSStatusBarButton` enters a modal tracking loop on mouseDown that consumes `leftMouseUp` events. Neither `sendAction(on:)`, local event monitors, nor any AppKit event dispatch mechanism receives the mouseUp. The fix is a custom `NSView` added as a subview on top of the button — `NSView` guarantees `mouseUp` is delivered to the same view that received `mouseDown`.
 
-### How frame loading works
+### How frame loading and animation works
 
-`AppDelegate.loadFrameImages()` loads frames from the app bundle at runtime using `Bundle.main.url(forResource:withExtension:subdirectory:)`. It looks up the selected butt's subfolder inside `ButtFrames/`, then iterates `frame_00.png`, `frame_01.png`, ... until no more files are found. Each frame is set to 20x20 points, marked `isTemplate = true` for automatic menu bar tinting. The frame count is dynamic per butt (not hardcoded).
+`FrameAnimator` is the single animation driver. It loads frames from the bundle (`ButtFrames/<id>/frame_00.png`, ...) and reads per-frame delays from `ButtInfo.frameDelays` (milliseconds, from the source GIF). Animation uses `DispatchSourceTimer` that reschedules itself after each frame with that frame's specific delay.
+
+`AppDelegate` creates a `FrameAnimator` and subscribes to its `$currentFrameIndex` via Combine. It maintains separate `menuBarFrames` — copies of the animator's frames configured for the menu bar (sized per icon size setting, `isTemplate = true`). `loadButtById(_:)` is the shared core that both permanent selection and temporary preview use.
 
 ### How the icon picker popover works
 
 The icon picker is an `NSPopover` with `.transient` behavior, shown relative to the status item button. After showing, `popover.contentViewController?.view.window?.makeKey()` gives the popover focus without activating the app — this avoids "Show Desktop" on desktop click and double-click issues on fullscreen Spaces. The popover auto-dismisses on click outside or Escape, positions itself automatically below the menu bar icon, and never shows in the Dock or Cmd+Tab. Selecting "Change Icon" while the popover is already open toggles it closed.
+
+### Preview-on-focus and revert-on-close
+
+Arrow keys in the picker temporarily preview the focused butt in the menu bar without persisting to UserDefaults. Communication between `ButtPickerView` (SwiftUI) and `AppDelegate` uses `NotificationCenter`:
+- `.previewButt` — posted on arrow key movement, carries the butt id. AppDelegate calls `previewButt(_:)` → `loadButtById(_:)`.
+- `.confirmAndClose` — posted on Enter. AppDelegate updates `committedButtId` and closes the popover.
+
+`AppDelegate` snapshots `committedButtId` when the popover opens. On `popoverDidClose` (via `NSPopoverDelegate`), if the menu bar is showing a preview that differs from the committed selection, it reverts. Single-click writes to `@AppStorage`/UserDefaults, which triggers `handleButtChange()` — this also updates `committedButtId` so close doesn't revert a deliberate selection. Notification observers are registered when the popover opens and removed in `popoverDidClose`.
 
 ### Known limitation: NSPopover activation
 
@@ -41,7 +52,7 @@ NSPopover's `.transient` dismissal ideally requires `NSApp.activate()`, but acti
 
 ### How butt switching works
 
-Selected butt id is stored in `UserDefaults` (key: `"selectedButtId"`, default: `"async-butt"`). `AppDelegate` observes `UserDefaults.didChangeNotification` — when the selected butt changes, it cancels the animation timer, reloads frames from the new butt's subfolder, and restarts animation.
+Selected butt id is stored in `UserDefaults` (key: `"selectedButtId"`, default: `"async-butt"`). Icon size is stored in `UserDefaults` (key: `"iconSize"`, default: `"fun-size"`). `AppDelegate` observes `UserDefaults.didChangeNotification` — when either value changes, `handleButtChange()` calls `loadButt()` which delegates to `loadButtById(_:)` to create a new `FrameAnimator` and rebuild `menuBarFrames`.
 
 ### Why DispatchSourceTimer (not Timer)
 
@@ -62,9 +73,9 @@ Selected butt id is stored in `UserDefaults` (key: `"selectedButtId"`, default: 
 
 ## Assets
 
-- `ButtFrames/` — Xcode folder reference (added to project outside the auto-synced source group to preserve directory hierarchy in the bundle). Contains 47 butt subfolders, each with numbered grayscale 40x40 PNG frames, plus a `manifest.json`. Generated by `buttsss/brazilian-butt-lift.py`.
+- `ButtFrames/` — Xcode folder reference (added to project outside the auto-synced source group to preserve directory hierarchy in the bundle). Contains 46 butt subfolders, each with numbered grayscale 160x160 PNG frames, plus a `manifest.json` with per-butt metadata including `frameDelays`. Generated by `buttsss/brazilian-butt-lift.py`.
 - `buttsss/fractured-but-whole/` — Source animated GIFs (512x512, black line art on white, by Pablo Stanley).
-- `buttsss/brazilian-butt-lift.py` — Python script (Pillow) that extracts GIF frames, converts to grayscale, resizes to 40x40, and outputs into `ButtFrames/`. See `buttsss/README.md` for setup and usage.
+- `buttsss/brazilian-butt-lift.py` — Python script (Pillow) that extracts GIF frames and per-frame delays, converts to grayscale, resizes to 160x160, and outputs into `ButtFrames/`. The 160px frames serve both the menu bar (downscaled to icon size setting) and the picker grid (displayed at 80pt @2x). See `buttsss/README.md` for setup and usage.
 
 ### Adding a new butt
 
@@ -86,13 +97,13 @@ pattiSpecialButton/
       frame_00.png ... frame_15.png
     async-butt/
       frame_00.png ... frame_05.png
-    ...47 folders, 457 frames total
+    ...46 folders, 456 frames total
   buttsss/                         <- asset pipeline
     brazilian-butt-lift.py
     requirements.txt
     .python-version (3.12.8)
     fractured-but-whole/           <- source GIFs
-      Alien-Butt.gif ... vampire.gif
+      Alien-Butt.gif ... vampire-butt.gif
   pattiSpecialButton/              <- app source (Xcode auto-synced)
     AppDelegate.swift
     pattiSpecialButtonApp.swift
