@@ -2,10 +2,11 @@
 """Extract, convert, and resize animated GIF frames for the app.
 
 Scans the buttsss/ directory for .gif files, extracts each frame,
-converts to grayscale, resizes to 160x160 pixels, and saves as PNGs
-organized into per-butt subfolders with a manifest.json. The 160px
-frames serve both the menu bar (downscaled to 20pt) and the picker
-grid (displayed at 80pt @2x).
+converts to RGBA (black outlines with alpha-based transparency),
+resizes to 160x160 pixels, and saves as PNGs organized into per-butt
+subfolders with a manifest.json. The 160px frames serve both the menu
+bar (downscaled to icon size setting) and the picker grid (displayed
+at 80pt @2x).
 
 Usage:
     cd buttsss/
@@ -20,7 +21,7 @@ import re
 import sys
 from pathlib import Path
 
-from PIL import Image
+from PIL import Image, ImageOps
 
 # -- Configuration ----------------------------------------------------------
 
@@ -88,28 +89,21 @@ def extract_frames(gif_path: Path) -> tuple[list[Image.Image], list[int]]:
 
 
 def process_frame(frame: Image.Image) -> Image.Image:
-    """Convert a single RGBA frame to a grayscale 160x160 template image.
+    """Convert a single RGBA frame to an RGBA outline image.
 
     Pipeline:
       1. Convert to grayscale (luminance)
       2. Resize to 160x160
-      --- TODO: future step ---
-      3. Convert to RGBA with alpha-based transparency
-         (dark lines -> opaque black, white background -> alpha=0)
-         This will give more precise template rendering.
+      3. Invert grayscale → alpha, RGB = black
+         Dark lines become opaque black, white background becomes transparent.
     """
     grayscale = frame.convert("L")
+    resized_gray = grayscale.resize(FRAME_SIZE, resample=RESAMPLE)
 
-    # TODO: Add alpha-based template conversion here.
-    # When enabled, this will:
-    #   - Invert grayscale so dark=high, light=low
-    #   - Use inverted values as the alpha channel
-    #   - Set RGB to (0, 0, 0) for all pixels
-    #   - Result: dark lines become opaque black, white becomes transparent
-    # For now, grayscale + isTemplate=true in Swift handles rendering.
-
-    resized = grayscale.resize(FRAME_SIZE, resample=RESAMPLE)
-    return resized
+    # Resize before alpha conversion to avoid blending artifacts in Lanczos.
+    inverted = ImageOps.invert(resized_gray)
+    black = Image.new("L", FRAME_SIZE, 0)
+    return Image.merge("RGBA", (black, black, black, inverted))
 
 
 # -- Main -------------------------------------------------------------------
@@ -126,12 +120,14 @@ def process_gif(gif_path: Path) -> dict | None:
         print(f"  ERROR extracting {gif_path.name}: {e}", file=sys.stderr)
         return None
 
+    if len(frames) <= 1:
+        print(f"  WARNING: {gif_path.name} has only {len(frames)} frame(s) — will not animate", file=sys.stderr)
+
     out_dir.mkdir(parents=True, exist_ok=True)
 
     for i, frame in enumerate(frames):
-        processed = process_frame(frame)
-        out_path = out_dir / f"frame_{i:02d}.png"
-        processed.save(out_path, "PNG")
+        rgba = process_frame(frame)
+        rgba.save(out_dir / f"frame_{i:02d}.png", "PNG")
 
     return {"id": slug, "name": name, "frameCount": len(frames), "frameDelays": delays}
 

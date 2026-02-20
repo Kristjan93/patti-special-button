@@ -7,8 +7,10 @@ A macOS menu bar app. A wiggling animated butt lives in the menu bar and plays a
 - **Menu bar icon**: An animated butt that wiggles continuously in the macOS menu bar (variable frame count per butt, per-frame timing from source GIFs).
 - **Left-click (tap)**: Plays a short fart sound (minimum 0.5s so the first fart always completes).
 - **Left-click (hold)**: Keeps playing farts in a loop for as long as the mouse is held. Loops back to start if held past end of file.
-- **Right-click menu**: Shows a context menu with "Change Icon", "Icon Size" submenu, and "Quit".
-- **Icon Size**: Three sizes — Fun Size (20pt), Regular Rump (22pt), Badonkadonk (24pt). Default: Fun Size. Stored in UserDefaults key `"iconSize"`.
+- **Right-click menu**: Shows a context menu with "Change Icon", "Icon Size" submenu, "Style" submenu, "Credits", and "Quit".
+- **Icon Size**: Three sizes — Fun Size (20pt), Regular Rump (21pt), Badonkadonk (22pt). Default: Fun Size. Stored in UserDefaults key `Defaults.iconSizeKey`.
+- **Credits**: Opens buttsss.com in the default browser for CC BY 4.0 attribution.
+- **Display Mode**: Three modes — Fill (inverted alpha + isTemplate=true, filled tinted background with outlines cut out), Original (composited on white + isTemplate=false, black lines on white), Outline (isTemplate=true, floating tinted outlines that adapt to theme). Default: Fill. Stored in UserDefaults key `Defaults.displayModeKey`. Affects both menu bar and picker grid. All modes use the same RGBA PNGs with runtime processing. Menu groups Fill and Outline under a "Dark / Light" header; Original is separated below.
 - **Change Icon popover**: Opens an NSPopover with a butt picker grid. Arrow keys preview the focused butt in the menu bar temporarily. Enter selects and closes. Single click selects (popover stays open). Escape/click outside dismisses and reverts the menu bar to the committed selection.
 - **No Dock icon**: Pure menu bar app — no Dock presence, no main window. Configured via `LSUIElement = YES`.
 
@@ -19,10 +21,11 @@ Hybrid SwiftUI + AppKit. SwiftUI provides the `@main` app lifecycle, but all men
 - `pattiSpecialButtonApp.swift` — App entry point. Wires up AppDelegate, uses `Settings { EmptyView() }` as a no-window scene (SwiftUI requires at least one Scene).
 - `AppDelegate.swift` — Core logic: `NSStatusItem` setup, `AVAudioPlayer` playback with hold-to-play, icon picker popover management, butt/size switching via UserDefaults, preview-on-focus lifecycle via NotificationCenter.
 - `StatusItemMouseView` (in AppDelegate.swift) — Transparent `NSView` subclass overlaid on the status bar button. Intercepts `mouseDown`/`mouseUp`/`rightMouseUp` to bypass `NSStatusBarButton`'s tracking loop which swallows `mouseUp` events.
-- `ButtPickerView.swift` — SwiftUI view for the icon picker grid. 4-column `LazyVGrid` with arrow key navigation (`.onKeyPress`), `ScrollViewReader` for scroll-to-selected, `@AppStorage` for butt selection. Posts `.previewButt` and `.confirmAndClose` notifications for AppDelegate communication.
+- `ButtPickerView.swift` — SwiftUI view for the icon picker grid. 4-column `LazyVGrid` with arrow key navigation (`.onKeyPress`), `ScrollViewReader` for scroll-to-selected, `@AppStorage` for butt selection and display mode. Posts `.previewButt` and `.confirmAndClose` notifications for AppDelegate communication. Passes display mode to each cell.
 - `AnimatedButtCell.swift` — SwiftUI cell for a single butt in the picker grid. Shows animated preview via `FrameAnimator`, checkmark badge for selected butt, blue highlight for keyboard focus.
-- `FrameAnimator.swift` — `ObservableObject` that loads PNG frames and per-frame timing from a `ButtInfo`, animates via `DispatchSourceTimer` with per-frame rescheduling. Shared by both `AppDelegate` (menu bar, via Combine subscription to `$currentFrameIndex`) and picker cells (SwiftUI, via `@Published currentFrame`).
+- `FrameAnimator.swift` — `ObservableObject` that loads RGBA PNG frames and per-frame timing from a `ButtInfo`, animates via `DispatchSourceTimer` with per-frame rescheduling. Takes an `invertAlpha` parameter for Fill mode (flips alpha to create the cutout effect). Shared by both `AppDelegate` (menu bar, via Combine subscription to `$currentFrameIndex`) and picker cells (SwiftUI, via `@Published currentFrame`).
 - `ButtInfo.swift` — Struct decoded from `manifest.json` with id, name, frameCount, frameDelays.
+- `Constants.swift` — Central file for all shared constants: `Defaults` (UserDefaults keys and default values), `DisplayMode` enum, `IconSize` enum (with `.points` and `.label`), `Assets` (bundle resource names), `Layout` (popover size, grid dimensions, cell sizes, timing).
 
 ### Why StatusItemMouseView exists
 
@@ -32,7 +35,7 @@ Hybrid SwiftUI + AppKit. SwiftUI provides the `@main` app lifecycle, but all men
 
 `FrameAnimator` is the single animation driver. It loads frames from the bundle (`ButtFrames/<id>/frame_00.png`, ...) and reads per-frame delays from `ButtInfo.frameDelays` (milliseconds, from the source GIF). Animation uses `DispatchSourceTimer` that reschedules itself after each frame with that frame's specific delay.
 
-`AppDelegate` creates a `FrameAnimator` and subscribes to its `$currentFrameIndex` via Combine. It maintains separate `menuBarFrames` — copies of the animator's frames configured for the menu bar (sized per icon size setting, `isTemplate = true`). `loadButtById(_:)` is the shared core that both permanent selection and temporary preview use.
+`AppDelegate` creates a `FrameAnimator` and subscribes to its `$currentFrameIndex` via Combine. It maintains separate `menuBarFrames` — copies of the animator's frames configured for the menu bar (sized per icon size setting, `isTemplate` per display mode). `loadButtById(_:)` is the shared core that both permanent selection and temporary preview use. It processes frames per display mode: Fill inverts alpha via `invertAlpha(_:size:)`, Original composites onto white via `compositeOnWhite(_:size:)`, Outline uses frames as-is. Both Fill and Outline set `isTemplate = true`; Original sets `isTemplate = false`.
 
 ### How the icon picker popover works
 
@@ -52,7 +55,7 @@ NSPopover's `.transient` dismissal ideally requires `NSApp.activate()`, but acti
 
 ### How butt switching works
 
-Selected butt id is stored in `UserDefaults` (key: `"selectedButtId"`, default: `"async-butt"`). Icon size is stored in `UserDefaults` (key: `"iconSize"`, default: `"fun-size"`). `AppDelegate` observes `UserDefaults.didChangeNotification` — when either value changes, `handleButtChange()` calls `loadButt()` which delegates to `loadButtById(_:)` to create a new `FrameAnimator` and rebuild `menuBarFrames`.
+Selected butt id, icon size, and display mode are stored in `UserDefaults` with keys and defaults defined in `Constants.swift` (`Defaults.selectedButtIdKey`, `Defaults.iconSizeKey`, `Defaults.displayModeKey`). `AppDelegate` observes `UserDefaults.didChangeNotification` — when any of these values change, `handleButtChange()` calls `loadButt()` which delegates to `loadButtById(_:)` to create a new `FrameAnimator` and rebuild `menuBarFrames`. All modes use the same RGBA PNGs; the display mode (typed as `DisplayMode` enum) controls per-frame processing (alpha inversion, white compositing, or pass-through) and `isTemplate`.
 
 ### Why DispatchSourceTimer (not Timer)
 
@@ -68,14 +71,14 @@ Selected butt id is stored in `UserDefaults` (key: `"selectedButtId"`, default: 
 ### Swapping the sound
 
 1. Drop a new sound file into the `pattiSpecialButton/` directory
-2. Update the `Bundle.main.url(forResource:withExtension:)` call in `AppDelegate.swift` to match the new filename
-3. Adjust `minimumPlayDuration` if needed to match the new sound's timing
+2. Update `Assets.fartSoundFile` in `Constants.swift` to match the new filename (without extension)
+3. Adjust `Layout.minimumPlayDuration` in `Constants.swift` if needed to match the new sound's timing
 
 ## Assets
 
-- `ButtFrames/` — Xcode folder reference (added to project outside the auto-synced source group to preserve directory hierarchy in the bundle). Contains 46 butt subfolders, each with numbered grayscale 160x160 PNG frames, plus a `manifest.json` with per-butt metadata including `frameDelays`. Generated by `buttsss/brazilian-butt-lift.py`.
+- `ButtFrames/` — Xcode folder reference (added to project outside the auto-synced source group to preserve directory hierarchy in the bundle). Contains 46 butt subfolders, each with numbered RGBA 160x160 PNG frames (black outlines with alpha-based transparency), plus a `manifest.json` with per-butt metadata including `frameDelays`. Generated by `buttsss/brazilian-butt-lift.py`.
 - `buttsss/fractured-but-whole/` — Source animated GIFs (512x512, black line art on white, by Pablo Stanley).
-- `buttsss/brazilian-butt-lift.py` — Python script (Pillow) that extracts GIF frames and per-frame delays, converts to grayscale, resizes to 160x160, and outputs into `ButtFrames/`. The 160px frames serve both the menu bar (downscaled to icon size setting) and the picker grid (displayed at 80pt @2x). See `buttsss/README.md` for setup and usage.
+- `buttsss/brazilian-butt-lift.py` — Python script (Pillow) that extracts GIF frames and per-frame delays, converts to RGBA (black outlines, alpha-based transparency), resizes to 160x160, and outputs into `ButtFrames/`. The 160px frames serve both the menu bar (downscaled to icon size setting) and the picker grid (displayed at 80pt @2x). See `buttsss/README.md` for setup and usage.
 
 ### Adding a new butt
 
@@ -83,9 +86,14 @@ Selected butt id is stored in `UserDefaults` (key: `"selectedButtId"`, default: 
 2. Run `cd buttsss && source .venv/bin/activate && python3 brazilian-butt-lift.py`
 3. Build in Xcode — the folder reference picks up changes automatically
 
-### Why grayscale (not alpha-based) template images
+### RGBA images and display mode processing
 
-macOS template rendering (`isTemplate = true`) reads grayscale luminance directly when there is no alpha channel: dark pixels are visible, white pixels are invisible. The existing frames are single-channel grayscale PNGs with no alpha — this just works. A future enhancement (TODO in the script) could convert to RGBA with alpha-based transparency for more precise rendering.
+All frames are RGBA (black outlines with alpha-based transparency). macOS template rendering (`isTemplate = true`) reads the alpha channel: opaque pixels are visible and tinted, transparent pixels are invisible.
+
+The three display modes produce different visuals from the same RGBA source via runtime processing at load time (not per-render):
+- **Fill**: Alpha inversion (`invertAlpha`) flips the alpha channel — outlines become transparent (cut out), background becomes opaque. With `isTemplate = true`, macOS fills the opaque background with the system tint and the outlines are cut through it. Result: filled tinted rectangle with outlines cut out, adapts to light/dark.
+- **Original**: Composited onto white (`compositeOnWhite`), `isTemplate = false`. Result: black lines on white square, same both themes.
+- **Outline**: RGBA used as-is, `isTemplate = true`. macOS tints the opaque outlines. Result: floating tinted outlines, adapts to light/dark.
 
 ## Project structure
 
@@ -94,7 +102,7 @@ pattiSpecialButton/
   ButtFrames/                      <- Xcode folder reference, copied as-is to bundle
     manifest.json
     alien-butt/
-      frame_00.png ... frame_15.png
+      frame_00.png ... frame_15.png   <- RGBA (alpha-based)
     async-butt/
       frame_00.png ... frame_05.png
     ...46 folders, 456 frames total
@@ -111,6 +119,7 @@ pattiSpecialButton/
     AnimatedButtCell.swift
     FrameAnimator.swift
     ButtInfo.swift
+    Constants.swift
     Assets.xcassets/
   docs/plans/                      <- design docs
 ```
