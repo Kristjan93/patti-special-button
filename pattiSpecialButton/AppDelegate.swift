@@ -38,6 +38,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         UserDefaults.standard.string(forKey: "selectedButtId") ?? "async-butt"
     }
 
+    private var currentIconSize: CGFloat {
+        switch UserDefaults.standard.string(forKey: "iconSize") ?? "fun-size" {
+        case "regular-rump": return 22
+        case "badonkadonk": return 24
+        default: return 20
+        }
+    }
+
     // MARK: - App Lifecycle
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -58,10 +66,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     // MARK: - Butt Switching
 
     private var lastLoadedButtId: String?
+    private var lastLoadedIconSize: CGFloat?
 
     private func handleButtChange() {
         let newId = currentButtId
-        guard newId != lastLoadedButtId else { return }
+        let newSize = currentIconSize
+        guard newId != lastLoadedButtId || newSize != lastLoadedIconSize else { return }
         loadButt()
     }
 
@@ -75,10 +85,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         let newAnimator = FrameAnimator(buttInfo: buttInfo)
 
-        // Build menu-bar-ready copies (20x20, template) from the shared frames
+        let size = currentIconSize
         menuBarFrames = newAnimator.frames.map { original in
             let copy = original.copy() as! NSImage
-            copy.size = NSSize(width: 20, height: 20)
+            copy.size = NSSize(width: size, height: size)
             copy.isTemplate = true
             return copy
         }
@@ -92,6 +102,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         animator = newAnimator
         newAnimator.start()
         lastLoadedButtId = buttId
+        lastLoadedIconSize = size
     }
 
     // MARK: - Status Item Setup
@@ -155,11 +166,29 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         changeIconItem.target = self
         menu.addItem(changeIconItem)
 
+        let sizeItem = NSMenuItem(title: "Icon Size", action: nil, keyEquivalent: "")
+        let sizeSubmenu = NSMenu()
+        let currentSize = UserDefaults.standard.string(forKey: "iconSize") ?? "fun-size"
+        for (tag, label) in [("fun-size", "Fun Size"), ("regular-rump", "Regular Rump"), ("badonkadonk", "Badonkadonk")] {
+            let item = NSMenuItem(title: label, action: #selector(selectIconSize(_:)), keyEquivalent: "")
+            item.target = self
+            item.representedObject = tag
+            item.state = tag == currentSize ? .on : .off
+            sizeSubmenu.addItem(item)
+        }
+        sizeItem.submenu = sizeSubmenu
+        menu.addItem(sizeItem)
+
         menu.addItem(NSMenuItem.separator())
         menu.addItem(NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
 
         statusItem.menu = menu
         statusItem.button?.performClick(nil)
+    }
+
+    @objc private func selectIconSize(_ sender: NSMenuItem) {
+        guard let size = sender.representedObject as? String else { return }
+        UserDefaults.standard.set(size, forKey: "iconSize")
     }
 
     func menuDidClose(_ menu: NSMenu) {

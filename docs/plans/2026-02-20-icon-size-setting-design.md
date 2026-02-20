@@ -1,6 +1,6 @@
 # Icon Size Setting
 
-Approved 2026-02-20. Adds a menu bar icon size picker to the top of the butt picker popover.
+Approved 2026-02-20. Adds a menu bar icon size setting to the right-click context menu.
 
 ## Feature
 
@@ -16,15 +16,16 @@ Default: Fun Size.
 
 ## UI
 
-SwiftUI `Picker` with `.menu` style, placed at the top of `ButtPickerView` above a `Divider()` and the scroll grid. Renders as a native `NSPopUpButton` dropdown showing the current size name.
+NSMenu submenu in the right-click context menu. "Icon Size >" expands to show the three options with a checkmark on the current selection. Matches the native macOS menu pattern (like "Other Networks" in the Wi-Fi dropdown).
+
+Initially explored placing a SwiftUI `Picker` at the top of the butt picker popover, but it cluttered the popover and didn't match the expected macOS interaction pattern. The context menu is the natural home for a setting like this.
 
 ## Data flow
 
-Same pattern as butt selection: `@AppStorage("iconSize")` in `ButtPickerView`, default `"fun-size"`. AppDelegate observes `UserDefaults.didChangeNotification` and rebuilds `menuBarFrames` with the new point size when the value changes.
+`UserDefaults` key `"iconSize"`, default `"fun-size"`. AppDelegate reads it via `currentIconSize` computed property (maps string to CGFloat). `handleButtChange()` detects size changes alongside butt id changes and calls `loadButt()` to rebuild `menuBarFrames` with the new point size.
 
 ## Files touched
 
 | File | Change |
 |------|--------|
-| `ButtPickerView.swift` | Add `@AppStorage("iconSize")` picker + `Divider()` above scroll view |
-| `AppDelegate.swift` | Read `iconSize` from UserDefaults in `loadButt()`, map value to point size. Extend change detection to handle size-only changes (not just butt id changes). |
+| `AppDelegate.swift` | Add `currentIconSize` computed property, "Icon Size" submenu in `showContextMenu()`, `selectIconSize(_:)` action, `lastLoadedIconSize` for change detection. Size used in `loadButt()` when building `menuBarFrames`. |
