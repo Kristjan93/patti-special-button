@@ -4,16 +4,22 @@ struct AnimatedButtCell: View {
     let butt: ButtInfo
     let isSelected: Bool
     var isFocused: Bool = false
+    let displayMode: String
     let onTap: () -> Void
+
+    private var isTemplate: Bool { displayMode != DisplayMode.original.rawValue }
 
     @StateObject private var animator: FrameAnimator
 
-    init(butt: ButtInfo, isSelected: Bool, isFocused: Bool = false, onTap: @escaping () -> Void) {
+    init(butt: ButtInfo, isSelected: Bool, isFocused: Bool = false,
+         displayMode: String = DisplayMode.fill.rawValue,
+         onTap: @escaping () -> Void) {
         self.butt = butt
         self.isSelected = isSelected
         self.isFocused = isFocused
+        self.displayMode = displayMode
         self.onTap = onTap
-        _animator = StateObject(wrappedValue: FrameAnimator(buttInfo: butt))
+        _animator = StateObject(wrappedValue: FrameAnimator(buttInfo: butt, invertAlpha: displayMode == DisplayMode.fill.rawValue))
     }
 
     var body: some View {
@@ -21,6 +27,7 @@ struct AnimatedButtCell: View {
             Group {
                 if let frame = animator.currentFrame {
                     Image(nsImage: frame)
+                        .renderingMode(isTemplate ? .template : .original)
                         .resizable()
                         .interpolation(.high)
                         .aspectRatio(contentMode: .fit)
@@ -28,20 +35,25 @@ struct AnimatedButtCell: View {
                     Color.clear
                 }
             }
-            .frame(width: 80, height: 80)
+            .frame(width: Layout.cellImageSize, height: Layout.cellImageSize)
+            .background(
+                displayMode == DisplayMode.original.rawValue
+                    ? RoundedRectangle(cornerRadius: 4).fill(Color.white)
+                    : RoundedRectangle(cornerRadius: 4).fill(Color.clear)
+            )
 
             Text(butt.name)
                 .font(.system(size: 11))
                 .lineLimit(1)
                 .truncationMode(.tail)
         }
-        .padding(8)
+        .padding(Layout.cellPadding)
         .background(
-            RoundedRectangle(cornerRadius: 8)
+            RoundedRectangle(cornerRadius: Layout.cellCornerRadius)
                 .fill(isFocused ? Color.accentColor.opacity(0.2) : Color.clear)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 8)
+            RoundedRectangle(cornerRadius: Layout.cellCornerRadius)
                 .stroke(isFocused ? Color.accentColor : Color.clear, lineWidth: 2)
         )
         .overlay(alignment: .topTrailing) {

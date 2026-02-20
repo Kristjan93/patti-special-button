@@ -23,7 +23,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     private var menuBarFrames: [NSImage] = []
     private var animatorSubscription: AnyCancellable?
 
-    private let minimumPlayDuration: TimeInterval = 0.5
+    private let minimumPlayDuration: TimeInterval = Layout.minimumPlayDuration
 
     private var audioPlayer: AVAudioPlayer?
     private var playbackStartTime: Date?
@@ -38,15 +38,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     private var buttLookup: [String: ButtInfo] = [:]
 
     private var currentButtId: String {
-        UserDefaults.standard.string(forKey: "selectedButtId") ?? "async-butt"
+        UserDefaults.standard.string(forKey: Defaults.selectedButtIdKey) ?? Defaults.defaultButtId
     }
 
     private var currentIconSize: CGFloat {
-        switch UserDefaults.standard.string(forKey: "iconSize") ?? "fun-size" {
-        case "regular-rump": return 22
-        case "badonkadonk": return 24
-        default: return 20
-        }
+        let raw = UserDefaults.standard.string(forKey: Defaults.iconSizeKey) ?? Defaults.defaultIconSize
+        return (IconSize(rawValue: raw) ?? .funSize).points
+    }
+
+    private var currentDisplayMode: DisplayMode {
+        let raw = UserDefaults.standard.string(forKey: Defaults.displayModeKey) ?? Defaults.defaultDisplayMode
+        return DisplayMode(rawValue: raw) ?? .fill
     }
 
     // MARK: - App Lifecycle
@@ -70,11 +72,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 
     private var lastLoadedButtId: String?
     private var lastLoadedIconSize: CGFloat?
+    private var lastLoadedDisplayMode: DisplayMode?
 
     private func handleButtChange() {
         let newId = currentButtId
         let newSize = currentIconSize
-        guard newId != lastLoadedButtId || newSize != lastLoadedIconSize else { return }
+        let newMode = currentDisplayMode
+        guard newId != lastLoadedButtId || newSize != lastLoadedIconSize
+            || newMode != lastLoadedDisplayMode else { return }
         // A UserDefaults write while the popover is open means the user clicked to select.
         // Update committedButtId so popover close doesn't revert this selection.
         if iconPickerPopover?.isShown == true {
@@ -87,6 +92,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         loadButtById(currentButtId)
         lastLoadedButtId = currentButtId
         lastLoadedIconSize = currentIconSize
+        lastLoadedDisplayMode = currentDisplayMode
     }
 
     private func loadButtById(_ buttId: String) {
@@ -94,14 +100,26 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 
         animator?.stop()
 
+        let mode = currentDisplayMode
+        let isTemplate = mode != .original
+
         let newAnimator = FrameAnimator(buttInfo: buttInfo)
 
-        let size = currentIconSize
+        let size = NSSize(width: currentIconSize, height: currentIconSize)
         menuBarFrames = newAnimator.frames.map { original in
-            let copy = original.copy() as! NSImage
-            copy.size = NSSize(width: size, height: size)
-            copy.isTemplate = true
-            return copy
+            let base: NSImage
+            switch mode {
+            case .fill:
+                base = invertAlpha(original, size: size)
+            case .original:
+                base = compositeOnWhite(original, size: size)
+            case .outline:
+                let copy = original.copy() as! NSImage
+                copy.size = size
+                base = copy
+            }
+            base.isTemplate = isTemplate
+            return base
         }
 
         animatorSubscription = newAnimator.$currentFrameIndex
@@ -125,6 +143,26 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         iconPickerPopover?.performClose(nil)
     }
 
+    private func invertAlpha(_ image: NSImage, size: NSSize) -> NSImage {
+        let result = NSImage(size: size)
+        result.lockFocus()
+        NSColor.white.set()
+        NSRect(origin: .zero, size: size).fill()
+        image.draw(in: NSRect(origin: .zero, size: size), from: .zero,
+                   operation: .destinationOut, fraction: 1.0)
+        result.unlockFocus()
+        return result
+    }
+
+    private func compositeOnWhite(_ image: NSImage, size: NSSize) -> NSImage {
+        let result = NSImage(size: size)
+        result.lockFocus()
+        NSColor.white.drawSwatch(in: NSRect(origin: .zero, size: size))
+        image.draw(in: NSRect(origin: .zero, size: size))
+        result.unlockFocus()
+        return result
+    }
+
     // MARK: - Status Item Setup
 
     private func setupStatusItem() {
@@ -145,7 +183,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     // MARK: - Sound Playback
 
     private func startSound() {
-        guard let url = Bundle.main.url(forResource: "556505__jixolros__small-realpoots105-110", withExtension: "wav") else { return }
+        guard let url = Bundle.main.url(forResource: Assets.fartSoundFile, withExtension: "wav") else { return }
 
         // Cancel any pending delayed stop from a previous click.
         pendingStop?.cancel()
@@ -188,18 +226,45 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 
         let sizeItem = NSMenuItem(title: "Icon Size", action: nil, keyEquivalent: "")
         let sizeSubmenu = NSMenu()
-        let currentSize = UserDefaults.standard.string(forKey: "iconSize") ?? "fun-size"
-        for (tag, label) in [("fun-size", "Fun Size"), ("regular-rump", "Regular Rump"), ("badonkadonk", "Badonkadonk")] {
-            let item = NSMenuItem(title: label, action: #selector(selectIconSize(_:)), keyEquivalent: "")
+        let currentSize = UserDefaults.standard.string(forKey: Defaults.iconSizeKey) ?? Defaults.defaultIconSize
+        for size in [IconSize.funSize, .regularRump, .badonkadonk] {
+            let item = NSMenuItem(title: size.label, action: #selector(selectIconSize(_:)), keyEquivalent: "")
             item.target = self
-            item.representedObject = tag
-            item.state = tag == currentSize ? .on : .off
+            item.representedObject = size.rawValue
+            item.state = size.rawValue == currentSize ? .on : .off
             sizeSubmenu.addItem(item)
         }
         sizeItem.submenu = sizeSubmenu
         menu.addItem(sizeItem)
 
+        let displayItem = NSMenuItem(title: "Style", action: nil, keyEquivalent: "")
+        let displaySubmenu = NSMenu()
+        let currentMode = currentDisplayMode
+
+        for (mode, label) in [(DisplayMode.fill, "Stencil"), (.outline, "Outline")] {
+            let item = NSMenuItem(title: label, action: #selector(selectDisplayMode(_:)), keyEquivalent: "")
+            item.target = self
+            item.representedObject = mode.rawValue
+            item.state = mode == currentMode ? .on : .off
+            displaySubmenu.addItem(item)
+        }
+
+        displaySubmenu.addItem(NSMenuItem.separator())
+
+        let originalItem = NSMenuItem(title: "Original", action: #selector(selectDisplayMode(_:)), keyEquivalent: "")
+        originalItem.target = self
+        originalItem.representedObject = DisplayMode.original.rawValue
+        originalItem.state = currentMode == .original ? .on : .off
+        displaySubmenu.addItem(originalItem)
+        displayItem.submenu = displaySubmenu
+        menu.addItem(displayItem)
+
         menu.addItem(NSMenuItem.separator())
+
+        let creditsItem = NSMenuItem(title: "Credits", action: #selector(creditsMenuAction), keyEquivalent: "")
+        creditsItem.target = self
+        menu.addItem(creditsItem)
+
         menu.addItem(NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
 
         statusItem.menu = menu
@@ -208,7 +273,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 
     @objc private func selectIconSize(_ sender: NSMenuItem) {
         guard let size = sender.representedObject as? String else { return }
-        UserDefaults.standard.set(size, forKey: "iconSize")
+        UserDefaults.standard.set(size, forKey: Defaults.iconSizeKey)
+    }
+
+    @objc private func selectDisplayMode(_ sender: NSMenuItem) {
+        guard let mode = sender.representedObject as? String else { return }
+        UserDefaults.standard.set(mode, forKey: Defaults.displayModeKey)
+    }
+
+    @objc private func creditsMenuAction() {
+        NSWorkspace.shared.open(URL(string: "https://www.buttsss.com/")!)
     }
 
     func menuDidClose(_ menu: NSMenu) {
@@ -228,7 +302,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         }
 
         let popover = NSPopover()
-        popover.contentSize = NSSize(width: 500, height: 500)
+        popover.contentSize = Layout.popoverSize
         popover.behavior = .transient
         popover.delegate = self
         popover.contentViewController = NSHostingController(rootView: ButtPickerView())
