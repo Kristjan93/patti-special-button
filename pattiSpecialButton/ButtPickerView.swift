@@ -1,5 +1,10 @@
 import SwiftUI
 
+extension Notification.Name {
+    static let previewButt = Notification.Name("previewButt")
+    static let confirmAndClose = Notification.Name("confirmAndClose")
+}
+
 struct ButtPickerView: View {
     @AppStorage("selectedButtId") private var selectedButtId = "async-butt"
     @State private var focusedIndex: Int = 0
@@ -49,11 +54,16 @@ struct ButtPickerView: View {
         guard newIndex >= 0 && newIndex < butts.count else { return .handled }
         focusedIndex = newIndex
         withAnimation { proxy.scrollTo(newIndex) }
+        NotificationCenter.default.post(
+            name: .previewButt, object: nil,
+            userInfo: ["buttId": butts[newIndex].id]
+        )
         return .handled
     }
 
     private func selectFocused() -> KeyPress.Result {
         selectedButtId = butts[focusedIndex].id
+        NotificationCenter.default.post(name: .confirmAndClose, object: nil)
         return .handled
     }
 }

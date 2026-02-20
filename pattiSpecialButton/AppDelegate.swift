@@ -16,7 +16,7 @@ class StatusItemMouseView: NSView {
     override func rightMouseUp(with event: NSEvent) { onRightMouseUp?() }
 }
 
-class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
+class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDelegate {
 
     private var statusItem: NSStatusItem!
     private var animator: FrameAnimator?
@@ -31,6 +31,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private var defaultsObservation: NSObjectProtocol?
     private var iconPickerPopover: NSPopover?
+    private var committedButtId: String?
+    private var previewObservation: NSObjectProtocol?
+    private var confirmCloseObservation: NSObjectProtocol?
 
     private var buttLookup: [String: ButtInfo] = [:]
 
@@ -72,14 +75,22 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let newId = currentButtId
         let newSize = currentIconSize
         guard newId != lastLoadedButtId || newSize != lastLoadedIconSize else { return }
+        // A UserDefaults write while the popover is open means the user clicked to select.
+        // Update committedButtId so popover close doesn't revert this selection.
+        if iconPickerPopover?.isShown == true {
+            committedButtId = newId
+        }
         loadButt()
     }
 
     private func loadButt() {
-        let buttId = currentButtId
-        guard let buttInfo = buttLookup[buttId] else {
-            fatalError("Unknown butt id: \(buttId)")
-        }
+        loadButtById(currentButtId)
+        lastLoadedButtId = currentButtId
+        lastLoadedIconSize = currentIconSize
+    }
+
+    private func loadButtById(_ buttId: String) {
+        guard let buttInfo = buttLookup[buttId] else { return }
 
         animator?.stop()
 
@@ -101,8 +112,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         animator = newAnimator
         newAnimator.start()
+    }
+
+    private func previewButt(_ buttId: String) {
+        guard buttId != lastLoadedButtId else { return }
+        loadButtById(buttId)
         lastLoadedButtId = buttId
-        lastLoadedIconSize = size
+    }
+
+    private func commitAndClosePopover() {
+        committedButtId = currentButtId
+        iconPickerPopover?.performClose(nil)
     }
 
     // MARK: - Status Item Setup
@@ -210,8 +230,24 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let popover = NSPopover()
         popover.contentSize = NSSize(width: 500, height: 500)
         popover.behavior = .transient
+        popover.delegate = self
         popover.contentViewController = NSHostingController(rootView: ButtPickerView())
         iconPickerPopover = popover
+
+        committedButtId = currentButtId
+
+        previewObservation = NotificationCenter.default.addObserver(
+            forName: .previewButt, object: nil, queue: .main
+        ) { [weak self] notification in
+            guard let buttId = notification.userInfo?["buttId"] as? String else { return }
+            self?.previewButt(buttId)
+        }
+
+        confirmCloseObservation = NotificationCenter.default.addObserver(
+            forName: .confirmAndClose, object: nil, queue: .main
+        ) { [weak self] _ in
+            self?.commitAndClosePopover()
+        }
 
         guard let button = statusItem.button else { return }
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
@@ -219,6 +255,25 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         // and .transient dismissal without activating the entire app (which causes
         // "Show Desktop" on desktop click and Space-switching on fullscreen).
         popover.contentViewController?.view.window?.makeKey()
+    }
+
+    func popoverDidClose(_ notification: Notification) {
+        if let obs = previewObservation {
+            NotificationCenter.default.removeObserver(obs)
+            previewObservation = nil
+        }
+        if let obs = confirmCloseObservation {
+            NotificationCenter.default.removeObserver(obs)
+            confirmCloseObservation = nil
+        }
+
+        // Revert to committed butt if we were previewing something else
+        if let committed = committedButtId, committed != lastLoadedButtId {
+            loadButtById(committed)
+            lastLoadedButtId = committed
+            lastLoadedIconSize = currentIconSize
+        }
+        committedButtId = nil
     }
 
 }
