@@ -9,8 +9,7 @@ The human co-writer on this project should be referred to as **MASTER**. Address
 ## What it does
 
 - **Menu bar icon**: An animated butt that wiggles continuously in the macOS menu bar (variable frame count per butt, per-frame timing from source GIFs).
-- **Left-click (tap)**: Plays a short fart sound (minimum 0.5s so the first fart always completes).
-- **Left-click (hold)**: Keeps playing farts in a loop for as long as the mouse is held. Loops back to start if held past end of file.
+- **Left-click**: Plays the selected sound once to completion.
 - **Right-click menu**: Shows a context menu with "Change Icon", "Change Sound", "Icon Size" submenu, "Style" submenu, "Credits", and "Quit".
 - **Icon Size**: Three sizes — Fun Size (20pt), Regular Rump (21pt), Badonkadonk (22pt). Default: Fun Size. Stored in UserDefaults key `Defaults.iconSizeKey`.
 - **Credits**: Opens buttsss.com in the default browser for CC BY 4.0 attribution.
@@ -24,8 +23,8 @@ The human co-writer on this project should be referred to as **MASTER**. Address
 Hybrid SwiftUI + AppKit. SwiftUI provides the `@main` app lifecycle, but all menu bar logic is in AppKit via `@NSApplicationDelegateAdaptor`.
 
 - `pattiSpecialButtonApp.swift` — App entry point. Wires up AppDelegate, uses `Settings { EmptyView() }` as a no-window scene (SwiftUI requires at least one Scene).
-- `AppDelegate.swift` — Core logic: `NSStatusItem` setup, `AVAudioPlayer` playback with hold-to-play, icon picker and sound picker popover management, butt/size/sound switching via UserDefaults, preview-on-focus lifecycle via NotificationCenter.
-- `StatusItemMouseView` (in AppDelegate.swift) — Transparent `NSView` subclass overlaid on the status bar button. Intercepts `mouseDown`/`mouseUp`/`rightMouseUp` to bypass `NSStatusBarButton`'s tracking loop which swallows `mouseUp` events.
+- `AppDelegate.swift` — Core logic: `NSStatusItem` setup, `AVAudioPlayer` playback (play to completion on click), icon picker and sound picker popover management, butt/size/sound switching via UserDefaults, preview-on-focus lifecycle via NotificationCenter.
+- `StatusItemMouseView` (in AppDelegate.swift) — Transparent `NSView` subclass overlaid on the status bar button. Intercepts `mouseDown`/`rightMouseUp` because `NSStatusBarButton`'s internal tracking loop swallows these events.
 - `ButtPickerView.swift` — SwiftUI view for the icon picker grid. 4-column `LazyVGrid` with arrow key navigation via NSEvent monitor, `ScrollViewReader` for scroll-to-selected, `@AppStorage` for butt selection and display mode. Posts `.previewButt` and `.confirmAndClose` notifications for AppDelegate communication. Passes display mode to each cell.
 - `AnimatedButtCell.swift` — SwiftUI cell for a single butt in the picker grid. Shows animated preview via `FrameAnimator`, checkmark badge for selected butt, blue highlight for keyboard focus.
 - `FrameAnimator.swift` — `ObservableObject` that loads RGBA PNG frames and per-frame timing from a `ButtInfo`, animates via `DispatchSourceTimer` with per-frame rescheduling. Takes an `invertAlpha` parameter for Fill mode (flips alpha to create the cutout effect). Shared by both `AppDelegate` (menu bar, via Combine subscription to `$currentFrameIndex`) and picker cells (SwiftUI, via `@Published currentFrame`).
@@ -74,7 +73,7 @@ Selected butt id, icon size, and display mode are stored in `UserDefaults` with 
 
 ## Sound
 
-Sound selection is stored in `UserDefaults` via `Defaults.selectedSoundIdKey`. `AppDelegate` builds a `soundLookup: [String: SoundInfo]` dictionary from the manifest at launch. `startSound()` reads the selected sound id, looks up the `SoundInfo`, and passes `sound.bundleURL` to `AVAudioPlayer`. Playback uses `numberOfLoops = -1` (infinite loop), starts on mouseDown, stops on mouseUp with a 0.5s minimum play duration enforced via `DispatchWorkItem`.
+Sound selection is stored in `UserDefaults` via `Defaults.selectedSoundIdKey`. `AppDelegate` builds a `soundLookup: [String: SoundInfo]` dictionary from the manifest at launch. `playSound()` reads the selected sound id, looks up the `SoundInfo`, and passes `sound.bundleURL` to `AVAudioPlayer`. Playback uses `numberOfLoops = 0` (play once to completion), triggered on mouseDown.
 
 Supported formats: WAV and MP3. FLAC is not supported by AVAudioPlayer on macOS.
 

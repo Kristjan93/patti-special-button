@@ -42,8 +42,6 @@ enum IconSize: String {
 enum Assets {
     static let buttFramesDir = "ButtFrames"
     static let manifestFile = "manifest"
-    static let fartSoundFile = "556505__jixolros__small-realpoots105-110"
-
     static let soundsDir = "sounds"
     static let soundsManifestFile = "sounds-manifest"
 }
@@ -56,7 +54,6 @@ enum Layout {
     static let cellImageSize: CGFloat = 80
     static let cellPadding: CGFloat = 8
     static let cellCornerRadius: CGFloat = 8
-    static let minimumPlayDuration: TimeInterval = 0.5
     static let creditsPopoverSize = NSSize(width: 250, height: 200)
 
     static let soundGridColumns = 2

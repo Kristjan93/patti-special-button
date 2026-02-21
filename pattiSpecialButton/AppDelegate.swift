@@ -8,11 +8,9 @@ import SwiftUI
 // subclass is guaranteed to receive mouseUp after mouseDown.
 class StatusItemMouseView: NSView {
     var onMouseDown: (() -> Void)?
-    var onMouseUp: (() -> Void)?
     var onRightMouseUp: (() -> Void)?
 
     override func mouseDown(with event: NSEvent) { onMouseDown?() }
-    override func mouseUp(with event: NSEvent) { onMouseUp?() }
     override func rightMouseUp(with event: NSEvent) { onRightMouseUp?() }
 }
 
@@ -23,11 +21,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     private var menuBarFrames: [NSImage] = []
     private var animatorSubscription: AnyCancellable?
 
-    private let minimumPlayDuration: TimeInterval = Layout.minimumPlayDuration
-
     private var audioPlayer: AVAudioPlayer?
-    private var playbackStartTime: Date?
-    private var pendingStop: DispatchWorkItem?
 
     private var defaultsObservation: NSObjectProtocol?
     private var iconPickerPopover: NSPopover?
@@ -183,44 +177,23 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 
         let mouseView = StatusItemMouseView(frame: button.bounds)
         mouseView.autoresizingMask = [.width, .height]
-        mouseView.onMouseDown = { [weak self] in self?.startSound() }
-        mouseView.onMouseUp = { [weak self] in self?.stopSound() }
+        mouseView.onMouseDown = { [weak self] in self?.playSound() }
         mouseView.onRightMouseUp = { [weak self] in self?.showContextMenu() }
         button.addSubview(mouseView)
     }
 
     // MARK: - Sound Playback
 
-    private func startSound() {
+    private func playSound() {
         guard let sound = soundLookup[currentSoundId],
               let url = sound.bundleURL else { return }
 
-        // Cancel any pending delayed stop from a previous click.
-        pendingStop?.cancel()
-
         do {
             audioPlayer = try AVAudioPlayer(contentsOf: url)
-            audioPlayer?.numberOfLoops = -1
-            audioPlayer?.currentTime = 0
+            audioPlayer?.numberOfLoops = 0
             audioPlayer?.play()
         } catch {
             return
-        }
-
-        playbackStartTime = Date()
-    }
-
-    private func stopSound() {
-        let elapsed = -(playbackStartTime ?? Date()).timeIntervalSinceNow
-        let remaining = minimumPlayDuration - elapsed
-
-        if remaining > 0 {
-            // Haven't hit the minimum yet — schedule a delayed stop.
-            let item = DispatchWorkItem { [weak self] in self?.audioPlayer?.stop() }
-            pendingStop = item
-            DispatchQueue.main.asyncAfter(deadline: .now() + remaining, execute: item)
-        } else {
-            audioPlayer?.stop()
         }
     }
 
