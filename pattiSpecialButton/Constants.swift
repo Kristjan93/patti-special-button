@@ -5,7 +5,7 @@ enum Defaults {
     static let iconSizeKey = "iconSize"
     static let displayModeKey = "displayMode"
 
-    static let defaultButtId = "async-butt"
+    static let defaultButtId = "asynchronous-butt"
     static let defaultIconSize = "fun-size"
     static let defaultDisplayMode = "fill"
 }

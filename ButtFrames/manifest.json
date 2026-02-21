@@ -24,8 +24,8 @@
       ]
     },
     {
-      "id": "async-butt",
-      "name": "Async Butt",
+      "id": "asynchronous-butt",
+      "name": "Asynchronous Butt",
       "frameCount": 6,
       "frameDelays": [
         100,
@@ -61,19 +61,6 @@
       ]
     },
     {
-      "id": "bouncing-butt-ii",
-      "name": "Bouncing Butt II",
-      "frameCount": 6,
-      "frameDelays": [
-        100,
-        100,
-        100,
-        100,
-        100,
-        100
-      ]
-    },
-    {
       "id": "bouncy-butt",
       "name": "Bouncy Butt",
       "frameCount": 4,
@@ -85,14 +72,44 @@
       ]
     },
     {
-      "id": "business",
-      "name": "Business",
+      "id": "bouncy-butt-ii",
+      "name": "Bouncy Butt II",
+      "frameCount": 6,
+      "frameDelays": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ]
+    },
+    {
+      "id": "businessbutt",
+      "name": "Business Butt",
       "frameCount": 4,
       "frameDelays": [
         130,
         120,
         130,
         130
+      ]
+    },
+    {
+      "id": "buttless-butt",
+      "name": "Buttless Butt",
+      "frameCount": 10,
+      "frameDelays": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
       ]
     },
     {
@@ -149,26 +166,14 @@
       ]
     },
     {
-      "id": "easterbunny",
-      "name": "Easter Bunny",
+      "id": "easterbutt",
+      "name": "Easter Butt",
       "frameCount": 4,
       "frameDelays": [
         130,
         120,
         130,
         130
-      ]
-    },
-    {
-      "id": "einsteinbutt",
-      "name": "Einstein Butt",
-      "frameCount": 5,
-      "frameDelays": [
-        130,
-        120,
-        130,
-        120,
-        120
       ]
     },
     {
@@ -198,25 +203,6 @@
       ]
     },
     {
-      "id": "frankenstein-butt",
-      "name": "Frankenstein Butt",
-      "frameCount": 12,
-      "frameDelays": [
-        100,
-        100,
-        100,
-        100,
-        100,
-        100,
-        100,
-        100,
-        100,
-        100,
-        100,
-        100
-      ]
-    },
-    {
       "id": "frida-butthlo",
       "name": "Frida Butthlo",
       "frameCount": 4,
@@ -225,6 +211,18 @@
         100,
         100,
         100
+      ]
+    },
+    {
+      "id": "geniusbutt",
+      "name": "Genius Butt",
+      "frameCount": 5,
+      "frameDelays": [
+        130,
+        120,
+        130,
+        120,
+        120
       ]
     },
     {
@@ -358,6 +356,18 @@
       ]
     },
     {
+      "id": "littlebutt",
+      "name": "Little Butt",
+      "frameCount": 5,
+      "frameDelays": [
+        130,
+        120,
+        130,
+        120,
+        120
+      ]
+    },
+    {
       "id": "magic-butt",
       "name": "Magic Butt",
       "frameCount": 27,
@@ -392,10 +402,12 @@
       ]
     },
     {
-      "id": "no-butt",
-      "name": "No Butt",
-      "frameCount": 10,
+      "id": "monster-butt",
+      "name": "Monster Butt",
+      "frameCount": 12,
       "frameDelays": [
+        100,
+        100,
         100,
         100,
         100,
@@ -583,18 +595,6 @@
       ]
     },
     {
-      "id": "smallbutt",
-      "name": "Small Butt",
-      "frameCount": 5,
-      "frameDelays": [
-        130,
-        120,
-        130,
-        120,
-        120
-      ]
-    },
-    {
       "id": "space-butt",
       "name": "Space Butt",
       "frameCount": 9,
@@ -667,6 +667,15 @@
       ]
     },
     {
+      "id": "thoughtful-butt",
+      "name": "Thoughtful Butt",
+      "frameCount": 2,
+      "frameDelays": [
+        250,
+        250
+      ]
+    },
+    {
       "id": "thunderbutt",
       "name": "Thunder Butt",
       "frameCount": 7,
@@ -715,8 +724,8 @@
       ]
     },
     {
-      "id": "ux-designer-butt",
-      "name": "UX Designer Butt",
+      "id": "ux-butt",
+      "name": "UX Butt",
       "frameCount": 5,
       "frameDelays": [
         250,
@@ -740,8 +749,8 @@
       ]
     },
     {
-      "id": "werewolf-putt",
-      "name": "Werewolf Putt",
+      "id": "werewolf-butt",
+      "name": "Werewolf Butt",
       "frameCount": 18,
       "frameDelays": [
         500,
