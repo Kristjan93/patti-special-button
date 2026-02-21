@@ -51,4 +51,11 @@ enum Layout {
     static let cellPadding: CGFloat = 8
     static let cellCornerRadius: CGFloat = 8
     static let minimumPlayDuration: TimeInterval = 0.5
+    static let creditsPopoverSize = NSSize(width: 250, height: 200)
+}
+
+enum Credits {
+    static let buttsssURL = URL(string: "https://www.buttsss.com/")!
+    static let freesoundURL = URL(string: "https://freesound.org/people/jixolros/")!
+    static let licenseURL = URL(string: "https://creativecommons.org/licenses/by/4.0/")!
 }

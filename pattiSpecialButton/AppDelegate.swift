@@ -31,6 +31,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 
     private var defaultsObservation: NSObjectProtocol?
     private var iconPickerPopover: NSPopover?
+    private var creditsPopover: NSPopover?
     private var committedButtId: String?
     private var previewObservation: NSObjectProtocol?
     private var keyMonitor: Any?
@@ -282,7 +283,20 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     }
 
     @objc private func creditsMenuAction() {
-        NSWorkspace.shared.open(URL(string: "https://www.buttsss.com/")!)
+        if let popover = creditsPopover, popover.isShown {
+            popover.performClose(nil)
+            return
+        }
+
+        let popover = NSPopover()
+        popover.contentSize = Layout.creditsPopoverSize
+        popover.behavior = .transient
+        popover.contentViewController = NSHostingController(rootView: CreditsView())
+        creditsPopover = popover
+
+        guard let button = statusItem.button else { return }
+        popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+        popover.contentViewController?.view.window?.makeKey()
     }
 
     func menuDidClose(_ menu: NSMenu) {
