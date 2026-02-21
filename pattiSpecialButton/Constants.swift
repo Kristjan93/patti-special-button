@@ -10,7 +10,7 @@ enum Defaults {
     static let defaultDisplayMode = "fill"
 
     static let selectedSoundIdKey = "selectedSoundId"
-    static let defaultSoundId = "small-realpoots"
+    static let defaultSoundId = "perfect-fart"
 }
 
 enum DisplayMode: String {

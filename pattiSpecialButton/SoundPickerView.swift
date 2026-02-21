@@ -133,7 +133,7 @@ struct SoundPickerView: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
         .frame(maxWidth: .infinity)
-        .background(.ultraThinMaterial)
+        .background(.regularMaterial)
     }
 
     private func keyHint(_ key: String, _ label: String?) -> some View {

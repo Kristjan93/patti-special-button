@@ -57,6 +57,10 @@ Arrow keys in the picker temporarily preview the focused butt in the menu bar wi
 
 `AppDelegate` snapshots `committedButtId` when the popover opens. On `popoverDidClose` (via `NSPopoverDelegate`), if the menu bar is showing a preview that differs from the committed selection, it reverts. Single-click writes to `@AppStorage`/UserDefaults, which triggers `handleButtChange()` — this also updates `committedButtId` so close doesn't revert a deliberate selection. Notification observers are registered when the popover opens and removed in `popoverDidClose`.
 
+### Keyboard hints footer and scroll insets
+
+Both pickers have a keyboard hints footer pinned to the bottom (keycap-style badges showing arrow keys, space, return, escape). On macOS 13+, `.safeAreaInset(edge: .bottom)` is applied directly to the `ScrollView` so `scrollTo` accounts for the footer height. On macOS 12, a ZStack overlay with manual bottom padding is used as fallback. The `safeAreaInset` must be on the `ScrollView` itself — not on a wrapper view — or scroll targets will land behind the footer.
+
 ### Known limitation: NSPopover activation
 
 NSPopover's `.transient` dismissal ideally requires `NSApp.activate()`, but activating an LSUIElement app causes desktop clicks to trigger "Show Desktop" and fullscreen Spaces to misbehave. Using `makeKey()` instead avoids these issues. If `.transient` dismissal ever stops working, the fallback would be switching to an `NSPanel` with `.nonactivatingPanel` style mask (the pattern used by Itsycal and other menu bar apps).
