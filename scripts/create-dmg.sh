@@ -1,27 +1,42 @@
 #!/bin/bash
 # Creates a DMG with drag-to-Applications layout for PattiSpecialButton
+# Uses create-dmg (brew install create-dmg) for reliable Finder layout.
 #
 # Usage: ./create-dmg.sh [path-to-app]
-# If no path given, looks for the app in the default Xcode build location.
+# If no path given, looks for the app in the default build locations.
 
 set -euo pipefail
 
 APP_NAME="PattiSpecialButton"
+APP_TARGET="pattiSpecialButton"
 DMG_NAME="${APP_NAME}-v1.0"
 VOL_NAME="${APP_NAME}"
-DMG_SIZE="50m"
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+BG_IMAGE="$SCRIPT_DIR/dmg-background.png"
+STAGING_DIR="$SCRIPT_DIR/.dmg-staging"
+DMG_OUTPUT="$PROJECT_DIR/${DMG_NAME}.dmg"
 
 # Find the .app
 if [ $# -ge 1 ]; then
     APP_PATH="$1"
 else
-    APP_PATH="$(find ~/Library/Developer/Xcode/DerivedData -name "${APP_NAME}.app" -path "*/Release/*" 2>/dev/null | head -1)"
+    # Check project-local build/ directory first (from xcodebuild)
+    APP_PATH="$(find "$PROJECT_DIR/build" -name "${APP_TARGET}.app" -path "*/Release/*" -not -path "*/Intermediates*" 2>/dev/null | head -1)"
+
+    # Then check Xcode archives (newest first)
     if [ -z "$APP_PATH" ]; then
-        # Fall back to pattiSpecialButton target name
-        APP_PATH="$(find ~/Library/Developer/Xcode/DerivedData -name "pattiSpecialButton.app" -path "*/Release/*" 2>/dev/null | head -1)"
+        APP_PATH="$(find ~/Library/Developer/Xcode/Archives -name "${APP_TARGET}.app" -path "*/Applications/*" 2>/dev/null | sort -r | head -1)"
     fi
+
+    # Then check DerivedData (exclude archive intermediates)
     if [ -z "$APP_PATH" ]; then
-        echo "Error: Could not find ${APP_NAME}.app in DerivedData."
+        APP_PATH="$(find ~/Library/Developer/Xcode/DerivedData -name "${APP_TARGET}.app" -path "*/Release/*" -not -path "*/Intermediates*" 2>/dev/null | head -1)"
+    fi
+
+    if [ -z "$APP_PATH" ]; then
+        echo "Error: Could not find ${APP_TARGET}.app."
         echo "Build in Release mode first, or pass the .app path as an argument."
         exit 1
     fi
@@ -34,29 +49,27 @@ fi
 
 echo "Using app: $APP_PATH"
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-STAGING_DIR="$SCRIPT_DIR/.dmg-staging"
-DMG_OUTPUT="$SCRIPT_DIR/../${DMG_NAME}.dmg"
-
 # Clean up previous artifacts
 rm -rf "$STAGING_DIR"
 rm -f "$DMG_OUTPUT"
 
-# Create staging directory
+# Stage the app
 mkdir -p "$STAGING_DIR"
-
-# Copy app and create Applications symlink
 cp -R "$APP_PATH" "$STAGING_DIR/${APP_NAME}.app"
-ln -s /Applications "$STAGING_DIR/Applications"
 
-# Create DMG
+# Create DMG with create-dmg
 echo "Creating DMG..."
-hdiutil create \
-    -volname "$VOL_NAME" \
-    -srcfolder "$STAGING_DIR" \
-    -ov \
-    -format UDZO \
-    "$DMG_OUTPUT"
+create-dmg \
+    --volname "$VOL_NAME" \
+    --background "$BG_IMAGE" \
+    --window-size 500 650 \
+    --icon-size 100 \
+    --icon "${APP_NAME}.app" 250 160 \
+    --app-drop-link 250 450 \
+    --hide-extension "${APP_NAME}.app" \
+    --no-internet-enable \
+    "$DMG_OUTPUT" \
+    "$STAGING_DIR"
 
 # Clean up staging
 rm -rf "$STAGING_DIR"
