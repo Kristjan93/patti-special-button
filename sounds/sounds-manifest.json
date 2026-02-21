@@ -1,0 +1,86 @@
+[
+  {
+    "id": "small-realpoots",
+    "name": "Small Realpoots",
+    "category": "farts",
+    "file": "556505__jixolros__small-realpoots105-110",
+    "ext": "wav"
+  },
+  {
+    "id": "fart3",
+    "name": "Fart 3",
+    "category": "farts",
+    "file": "27136__zippi1__fart3",
+    "ext": "wav"
+  },
+  {
+    "id": "quack-fart",
+    "name": "Quack Fart",
+    "category": "farts",
+    "file": "391468__stereostory__quack_fart_noise_44k",
+    "ext": "wav"
+  },
+  {
+    "id": "mackaffee-fart",
+    "name": "McFart",
+    "category": "farts",
+    "file": "326143__mackaffee__fart",
+    "ext": "mp3"
+  },
+  {
+    "id": "dramatic-fart",
+    "name": "Dramatic Fart",
+    "category": "farts",
+    "file": "dramatic-fart_f8Sw6fv",
+    "ext": "mp3"
+  },
+  {
+    "id": "dry-fart",
+    "name": "Dry Toot",
+    "category": "farts",
+    "file": "dry-fart",
+    "ext": "mp3"
+  },
+  {
+    "id": "fart-meme",
+    "name": "Meme Fart",
+    "category": "farts",
+    "file": "fart-meme-sound",
+    "ext": "mp3"
+  },
+  {
+    "id": "perfect-fart",
+    "name": "Perfect Fart",
+    "category": "farts",
+    "file": "perfect-fart",
+    "ext": "mp3"
+  },
+  {
+    "id": "punch",
+    "name": "Punch",
+    "category": "novelty",
+    "file": "104183__ekokubza123__punch",
+    "ext": "wav"
+  },
+  {
+    "id": "spanking",
+    "name": "Spanking",
+    "category": "novelty",
+    "file": "204805__ezcah__spanking",
+    "ext": "wav"
+  },
+  {
+    "id": "maro-jump",
+    "name": "Maro Jump",
+    "category": "novelty",
+    "file": "maro-jump-sound-effect_1",
+    "ext": "mp3"
+  },
+  {
+    "id": "audience-aww",
+    "name": "Audience Aww",
+    "category": "novelty",
+    "file": "studio-audience-awwww-sound-fx",
+    "ext": "mp3"
+  }
+]

@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		2D49E938BDFD41A197956296 /* ButtFrames in Resources */ = {isa = PBXBuildFile; fileRef = E93A83B1F3024B7692613BF8 /* ButtFrames */; };
+		A1B2C3D4E5F647A8B9C0D1E2 /* sounds in Resources */ = {isa = PBXBuildFile; fileRef = F1E2D3C4B5A6978869504132 /* sounds */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -32,6 +33,7 @@
 		9F0FB7C02F44C8FF002228F8 /* pattiSpecialButtonTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = pattiSpecialButtonTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		9F0FB7CA2F44C900002228F8 /* pattiSpecialButtonUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = pattiSpecialButtonUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E93A83B1F3024B7692613BF8 /* ButtFrames */ = {isa = PBXFileReference; lastKnownFileType = folder; path = ButtFrames; sourceTree = "<group>"; };
+		F1E2D3C4B5A6978869504132 /* sounds */ = {isa = PBXFileReference; lastKnownFileType = folder; path = sounds; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -81,6 +83,7 @@
 			isa = PBXGroup;
 			children = (
 				E93A83B1F3024B7692613BF8 /* ButtFrames */,
+				F1E2D3C4B5A6978869504132 /* sounds */,
 				9F0FB7B42F44C8FE002228F8 /* pattiSpecialButton */,
 				9F0FB7C32F44C8FF002228F8 /* pattiSpecialButtonTests */,
 				9F0FB7CD2F44C900002228F8 /* pattiSpecialButtonUITests */,
@@ -219,6 +222,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				2D49E938BDFD41A197956296 /* ButtFrames in Resources */,
+				A1B2C3D4E5F647A8B9C0D1E2 /* sounds in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -31,12 +31,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 
     private var defaultsObservation: NSObjectProtocol?
     private var iconPickerPopover: NSPopover?
+    private var soundPickerPopover: NSPopover?
     private var creditsPopover: NSPopover?
     private var committedButtId: String?
+    private var committedSoundId: String?
     private var previewObservation: NSObjectProtocol?
     private var keyMonitor: Any?
 
     private var buttLookup: [String: ButtInfo] = [:]
+    private var soundLookup: [String: SoundInfo] = [:]
 
     private var currentButtId: String {
         UserDefaults.standard.string(forKey: Defaults.selectedButtIdKey) ?? Defaults.defaultButtId
@@ -54,8 +57,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 
     // MARK: - App Lifecycle
 
+    private var currentSoundId: String {
+        UserDefaults.standard.string(forKey: Defaults.selectedSoundIdKey) ?? Defaults.defaultSoundId
+    }
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         buttLookup = Dictionary(uniqueKeysWithValues: loadButtManifest().map { ($0.id, $0) })
+        soundLookup = Dictionary(uniqueKeysWithValues: loadSoundManifest().map { ($0.id, $0) })
         setupStatusItem()
         loadButt()
 
@@ -184,7 +192,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     // MARK: - Sound Playback
 
     private func startSound() {
-        guard let url = Bundle.main.url(forResource: Assets.fartSoundFile, withExtension: "wav") else { return }
+        guard let sound = soundLookup[currentSoundId],
+              let url = sound.bundleURL else { return }
 
         // Cancel any pending delayed stop from a previous click.
         pendingStop?.cancel()
@@ -224,6 +233,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         let changeIconItem = NSMenuItem(title: "Change Icon", action: #selector(changeIconMenuAction), keyEquivalent: "")
         changeIconItem.target = self
         menu.addItem(changeIconItem)
+
+        let changeSoundItem = NSMenuItem(title: "Change Sound", action: #selector(changeSoundMenuAction), keyEquivalent: "")
+        changeSoundItem.target = self
+        menu.addItem(changeSoundItem)
 
         let sizeItem = NSMenuItem(title: "Icon Size", action: nil, keyEquivalent: "")
         let sizeSubmenu = NSMenu()
@@ -384,6 +397,71 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             lastLoadedIconSize = currentIconSize
         }
         committedButtId = nil
+        committedSoundId = nil
+    }
+
+    // MARK: - Sound Picker Popover
+
+    @objc private func changeSoundMenuAction() {
+        showSoundPicker()
+    }
+
+    private func showSoundPicker() {
+        if let popover = soundPickerPopover, popover.isShown {
+            popover.performClose(nil)
+            return
+        }
+
+        let popover = NSPopover()
+        popover.contentSize = Layout.soundPopoverSize
+        popover.behavior = .transient
+        popover.delegate = self
+        popover.contentViewController = NSHostingController(rootView: SoundPickerView())
+        soundPickerPopover = popover
+
+        committedSoundId = currentSoundId
+
+        previewObservation = NotificationCenter.default.addObserver(
+            forName: .confirmAndCloseSound, object: nil, queue: .main
+        ) { [weak self] _ in
+            guard let self else { return }
+            self.committedSoundId = self.currentSoundId
+            self.soundPickerPopover?.performClose(nil)
+        }
+
+        keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            guard let self else { return event }
+            switch event.keyCode {
+            case 49: // space
+                NotificationCenter.default.post(name: .toggleSoundPreview, object: nil)
+                return nil
+            case 123: // left arrow
+                NotificationCenter.default.post(name: .moveSoundFocus, object: nil,
+                                                userInfo: ["offset": -1])
+                return nil
+            case 124: // right arrow
+                NotificationCenter.default.post(name: .moveSoundFocus, object: nil,
+                                                userInfo: ["offset": 1])
+                return nil
+            case 126: // up arrow
+                NotificationCenter.default.post(name: .moveSoundFocus, object: nil,
+                                                userInfo: ["offset": -Layout.soundGridColumns])
+                return nil
+            case 125: // down arrow
+                NotificationCenter.default.post(name: .moveSoundFocus, object: nil,
+                                                userInfo: ["offset": Layout.soundGridColumns])
+                return nil
+            case 36: // return
+                NotificationCenter.default.post(name: .confirmAndCloseSound, object: nil)
+                return nil
+            default:
+                return event
+            }
+        }
+
+        guard let button = statusItem.button else { return }
+        popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+        popover.contentViewController?.view.window?.makeKey()
     }
 
 }

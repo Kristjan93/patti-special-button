@@ -164,4 +164,4 @@ All APIs used are macOS 12 safe:
 ## Future Enhancements
 
 - Marquee/ticker text for long sound names
-- User-added custom sounds (drop file + update manifest)
+- User-uploaded custom sounds via two-manifest approach: bundled manifest (read-only in app bundle) + user manifest (writable in `~/Library/Application Support/com.pattiVoice.pattiSpecialButton/`). App merges both at load time. No extra sandbox entitlements needed.

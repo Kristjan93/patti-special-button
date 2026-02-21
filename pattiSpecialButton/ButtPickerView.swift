@@ -36,7 +36,6 @@ struct ButtPickerView: View {
             }
             .padding(.vertical, 12)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .focusable()
             .onReceive(NotificationCenter.default.publisher(for: .moveFocus)) { notification in
                 guard let offset = notification.userInfo?["offset"] as? Int else { return }
                 move(offset, proxy: proxy)

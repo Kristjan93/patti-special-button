@@ -11,11 +11,12 @@ The human co-writer on this project should be referred to as **MASTER**. Address
 - **Menu bar icon**: An animated butt that wiggles continuously in the macOS menu bar (variable frame count per butt, per-frame timing from source GIFs).
 - **Left-click (tap)**: Plays a short fart sound (minimum 0.5s so the first fart always completes).
 - **Left-click (hold)**: Keeps playing farts in a loop for as long as the mouse is held. Loops back to start if held past end of file.
-- **Right-click menu**: Shows a context menu with "Change Icon", "Icon Size" submenu, "Style" submenu, "Credits", and "Quit".
+- **Right-click menu**: Shows a context menu with "Change Icon", "Change Sound", "Icon Size" submenu, "Style" submenu, "Credits", and "Quit".
 - **Icon Size**: Three sizes — Fun Size (20pt), Regular Rump (21pt), Badonkadonk (22pt). Default: Fun Size. Stored in UserDefaults key `Defaults.iconSizeKey`.
 - **Credits**: Opens buttsss.com in the default browser for CC BY 4.0 attribution.
 - **Display Mode**: Three modes — Fill (inverted alpha + isTemplate=true, filled tinted background with outlines cut out), Original (composited on white + isTemplate=false, black lines on white), Outline (isTemplate=true, floating tinted outlines that adapt to theme). Default: Fill. Stored in UserDefaults key `Defaults.displayModeKey`. Affects both menu bar and picker grid. All modes use the same RGBA PNGs with runtime processing. Menu groups Fill and Outline under a "Dark / Light" header; Original is separated below.
 - **Change Icon popover**: Opens an NSPopover with a butt picker grid. Arrow keys preview the focused butt in the menu bar temporarily. Enter selects and closes. Single click selects (popover stays open). Escape/click outside dismisses and reverts the menu bar to the committed selection.
+- **Change Sound popover**: Opens an NSPopover with a sound picker grid. 2-column grid with categorized sections (bold header + divider between categories). Each card shows a waveform visualization with play/stop button, display name, and filename. Space toggles preview playback, arrow keys move focus, Enter selects and closes. One sound at a time — starting a new preview stops the previous. Semi-transparent keyboard hints footer at bottom: `␣ Play/Pause ↩ Select ⎋ Close`.
 - **No Dock icon**: Pure menu bar app — no Dock presence, no main window. Configured via `LSUIElement = YES`.
 
 ## Architecture
@@ -23,13 +24,17 @@ The human co-writer on this project should be referred to as **MASTER**. Address
 Hybrid SwiftUI + AppKit. SwiftUI provides the `@main` app lifecycle, but all menu bar logic is in AppKit via `@NSApplicationDelegateAdaptor`.
 
 - `pattiSpecialButtonApp.swift` — App entry point. Wires up AppDelegate, uses `Settings { EmptyView() }` as a no-window scene (SwiftUI requires at least one Scene).
-- `AppDelegate.swift` — Core logic: `NSStatusItem` setup, `AVAudioPlayer` playback with hold-to-play, icon picker popover management, butt/size switching via UserDefaults, preview-on-focus lifecycle via NotificationCenter.
+- `AppDelegate.swift` — Core logic: `NSStatusItem` setup, `AVAudioPlayer` playback with hold-to-play, icon picker and sound picker popover management, butt/size/sound switching via UserDefaults, preview-on-focus lifecycle via NotificationCenter.
 - `StatusItemMouseView` (in AppDelegate.swift) — Transparent `NSView` subclass overlaid on the status bar button. Intercepts `mouseDown`/`mouseUp`/`rightMouseUp` to bypass `NSStatusBarButton`'s tracking loop which swallows `mouseUp` events.
-- `ButtPickerView.swift` — SwiftUI view for the icon picker grid. 4-column `LazyVGrid` with arrow key navigation (`.onKeyPress`), `ScrollViewReader` for scroll-to-selected, `@AppStorage` for butt selection and display mode. Posts `.previewButt` and `.confirmAndClose` notifications for AppDelegate communication. Passes display mode to each cell.
+- `ButtPickerView.swift` — SwiftUI view for the icon picker grid. 4-column `LazyVGrid` with arrow key navigation via NSEvent monitor, `ScrollViewReader` for scroll-to-selected, `@AppStorage` for butt selection and display mode. Posts `.previewButt` and `.confirmAndClose` notifications for AppDelegate communication. Passes display mode to each cell.
 - `AnimatedButtCell.swift` — SwiftUI cell for a single butt in the picker grid. Shows animated preview via `FrameAnimator`, checkmark badge for selected butt, blue highlight for keyboard focus.
 - `FrameAnimator.swift` — `ObservableObject` that loads RGBA PNG frames and per-frame timing from a `ButtInfo`, animates via `DispatchSourceTimer` with per-frame rescheduling. Takes an `invertAlpha` parameter for Fill mode (flips alpha to create the cutout effect). Shared by both `AppDelegate` (menu bar, via Combine subscription to `$currentFrameIndex`) and picker cells (SwiftUI, via `@Published currentFrame`).
 - `ButtInfo.swift` — Struct decoded from `manifest.json` with id, name, frameCount, frameDelays.
-- `Constants.swift` — Central file for all shared constants: `Defaults` (UserDefaults keys and default values), `DisplayMode` enum, `IconSize` enum (with `.points` and `.label`), `Assets` (bundle resource names), `Layout` (popover size, grid dimensions, cell sizes, timing).
+- `SoundInfo.swift` — Struct decoded from `sounds-manifest.json` with id, name, category, file, ext. Computed `bundleURL` and `displayFilename` properties.
+- `SoundPickerView.swift` — SwiftUI view for the sound picker grid. 2-column `LazyVGrid` with categorized sections (case-insensitive grouping), `AVAudioPlayer` preview playback with `Timer`-based scrubber progress, waveform sample caching. Keyboard hints footer overlay.
+- `SoundCell.swift` — SwiftUI cell for a single sound in the picker grid. Shows waveform bars via `WaveformView`, play/stop button, display name, filename, checkmark badge for selected, blue focus ring.
+- `WaveformView.swift` — SwiftUI view that draws amplitude bars with playback scrubber. Bars change from gray to accent color as playhead passes. Includes `WaveformSampler` that reads audio via `AVAudioFile` + `AVAudioPCMBuffer` and downsamples to bar amplitudes.
+- `Constants.swift` — Central file for all shared constants: `Defaults` (UserDefaults keys and default values including `selectedSoundIdKey`), `DisplayMode` enum, `IconSize` enum (with `.points` and `.label`), `Assets` (bundle resource names including `soundsDir`), `Layout` (popover sizes, grid dimensions, cell sizes, timing, waveform bar count).
 
 ### Why StatusItemMouseView exists
 
@@ -69,25 +74,42 @@ Selected butt id, icon size, and display mode are stored in `UserDefaults` with 
 
 ## Sound
 
-- **File**: `556505__jixolros__small-realpoots105-110.wav` — contains multiple short farts with 0.4s gaps, trimmed from original freesound.org recording.
-- **Playback**: `AVAudioPlayer` with `numberOfLoops = -1` (infinite loop). Starts on mouseDown, stops on mouseUp with a 0.5s minimum play duration enforced via `DispatchWorkItem`.
+Sound selection is stored in `UserDefaults` via `Defaults.selectedSoundIdKey`. `AppDelegate` builds a `soundLookup: [String: SoundInfo]` dictionary from the manifest at launch. `startSound()` reads the selected sound id, looks up the `SoundInfo`, and passes `sound.bundleURL` to `AVAudioPlayer`. Playback uses `numberOfLoops = -1` (infinite loop), starts on mouseDown, stops on mouseUp with a 0.5s minimum play duration enforced via `DispatchWorkItem`.
 
-### Swapping the sound
+Supported formats: WAV and MP3. FLAC is not supported by AVAudioPlayer on macOS.
 
-1. Drop a new sound file into the `pattiSpecialButton/` directory
-2. Update `Assets.fartSoundFile` in `Constants.swift` to match the new filename (without extension)
-3. Adjust `Layout.minimumPlayDuration` in `Constants.swift` if needed to match the new sound's timing
+### How the sound picker popover works
+
+Same lifecycle pattern as the icon picker. `showSoundPicker()` creates an `NSPopover` with `.transient` behavior hosting `SoundPickerView`. Keyboard handling via `NSEvent.addLocalMonitorForEvents` (macOS 12 compatible, no SwiftUI `.onKeyPress`):
+- Arrow keys → `.moveSoundFocus` notification with offset based on `Layout.soundGridColumns`
+- Space (keyCode 49) → `.toggleSoundPreview` notification
+- Return → `.confirmAndCloseSound` notification (selects + closes)
+
+`SoundPickerView` manages preview playback internally: `AVAudioPlayer` for audio, `Timer` polling `currentTime/duration` for waveform scrubber progress. One sound at a time — starting a new preview stops the previous. Waveform samples are computed once on appear via `WaveformSampler` (reads `AVAudioFile` + `AVAudioPCMBuffer`, downsamples to ~25 amplitude bars) and cached in `@State`.
+
+### Adding a new sound
+
+1. Drop the audio file (WAV or MP3) into `sounds/`
+2. Run `cd scripts && source .venv/bin/activate && python3 sound-check.py`
+3. Edit `sounds/sounds-manifest.json` to set the display name and category
+4. Build in Xcode — the folder reference picks up changes automatically
+
+### Future: User-uploaded sounds
+
+Planned two-manifest approach: bundled manifest (read-only in app bundle) + user manifest (writable in `~/Library/Application Support/com.pattiVoice.pattiSpecialButton/`). The app would merge both at load time. No extra sandbox entitlements needed — Application Support is writable by default. Not yet implemented.
 
 ## Assets
 
-- `ButtFrames/` — Xcode folder reference (added to project outside the auto-synced source group to preserve directory hierarchy in the bundle). Contains 47 butt subfolders, each with numbered RGBA 160x160 PNG frames (black outlines with alpha-based transparency), plus a `manifest.json` with per-butt metadata including `frameDelays`. Generated by `buttsss/brazilian-butt-lift.py`.
-- `buttsss/fractured-but-whole/` — Source animated GIFs (512x512, black line art on white, by Pablo Stanley).
-- `buttsss/brazilian-butt-lift.py` — Python script (Pillow) that extracts GIF frames and per-frame delays, converts to RGBA (black outlines, alpha-based transparency), resizes to 160x160, and outputs into `ButtFrames/`. The 160px frames serve both the menu bar (downscaled to icon size setting) and the picker grid (displayed at 80pt @2x). See `buttsss/README.md` for setup and usage.
+- `ButtFrames/` — Xcode folder reference (added to project outside the auto-synced source group to preserve directory hierarchy in the bundle). Contains 47 butt subfolders, each with numbered RGBA 160x160 PNG frames (black outlines with alpha-based transparency), plus a `manifest.json` with per-butt metadata including `frameDelays`. Generated by `scripts/brazilian-butt-lift.py`.
+- `sounds/` — Xcode folder reference containing sound files (WAV/MP3) and `sounds-manifest.json`. Copied as-is into the bundle. Manifest is a plain JSON array of `SoundInfo` entries with id, name, category, file, ext.
+- `scripts/fractured-but-whole/` — Source animated GIFs (512x512, black line art on white, by Pablo Stanley).
+- `scripts/brazilian-butt-lift.py` — Python script (Pillow) that extracts GIF frames and per-frame delays, converts to RGBA (black outlines, alpha-based transparency), resizes to 160x160, and outputs into `ButtFrames/`. The 160px frames serve both the menu bar (downscaled to icon size setting) and the picker grid (displayed at 80pt @2x). See `scripts/README.md` for setup and usage.
+- `scripts/sound-check.py` — Python script that scans `sounds/`, converts unsupported formats (FLAC, OGG, WMA, OPUS) to WAV via ffmpeg, and generates/updates `sounds-manifest.json`. Preserves existing entries — only adds new files with `"uncategorized"` default. Supports `--dry-run`.
 
 ### Adding a new butt
 
-1. Drop the GIF into `buttsss/fractured-but-whole/`
-2. Run `cd buttsss && source .venv/bin/activate && python3 brazilian-butt-lift.py`
+1. Drop the GIF into `scripts/fractured-but-whole/`
+2. Run `cd scripts && source .venv/bin/activate && python3 brazilian-butt-lift.py`
 3. Build in Xcode — the folder reference picks up changes automatically
 
 ### RGBA images and display mode processing
@@ -110,8 +132,14 @@ pattiSpecialButton/
     asynchronous-butt/
       frame_00.png ... frame_05.png
     ...47 folders, 458 frames total
-  buttsss/                         <- asset pipeline
-    brazilian-butt-lift.py
+  sounds/                          <- Xcode folder reference, copied as-is to bundle
+    sounds-manifest.json
+    556505__jixolros__small-realpoots105-110.wav
+    dry-fart.mp3
+    ...12 sound files (WAV + MP3)
+  scripts/                         <- asset pipeline
+    brazilian-butt-lift.py         <- butt frame extractor
+    sound-check.py                 <- sound asset manager
     requirements.txt
     .python-version (3.12.8)
     fractured-but-whole/           <- source GIFs
@@ -123,7 +151,12 @@ pattiSpecialButton/
     AnimatedButtCell.swift
     FrameAnimator.swift
     ButtInfo.swift
+    SoundInfo.swift
+    SoundPickerView.swift
+    SoundCell.swift
+    WaveformView.swift
     Constants.swift
+    CreditsView.swift
     Assets.xcassets/
   docs/plans/                      <- design docs
 ```
