@@ -4,7 +4,7 @@ A macOS menu bar app. A wiggling animated butt lives in the menu bar and plays a
 
 ## Co-writer
 
-The human co-writer on this project should be referred to as **MASTER** or **SPECIAL K**. Address them this way naturally in conversation — end of sentences, greetings, acknowledgements. Keep it respectful and consistent, MASTER.
+The human co-writer on this project should be referred to as **MASTER**. Address them this way naturally in conversation — end of sentences, greetings, acknowledgements. Keep it respectful and consistent.
 
 ## What it does
 
