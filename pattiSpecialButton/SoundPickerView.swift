@@ -42,47 +42,8 @@ struct SoundPickerView: View {
     }
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            ScrollViewReader { proxy in
-                ScrollView {
-                    VStack(alignment: .leading, spacing: Layout.gridSpacing) {
-                        ForEach(Array(groupedSounds.enumerated()), id: \.element.category) { groupIndex, group in
-                            if groupIndex > 0 {
-                                Divider().padding(.horizontal, Layout.gridPadding)
-                            }
-
-                            Text(group.category)
-                                .font(.system(size: 13, weight: .bold))
-                                .padding(.horizontal, Layout.gridPadding)
-                                .padding(.top, groupIndex > 0 ? 4 : 0)
-
-                            LazyVGrid(columns: columns, spacing: Layout.gridSpacing) {
-                                ForEach(group.sounds) { sound in
-                                    let flatIndex = flatSounds.firstIndex(where: { $0.id == sound.id }) ?? 0
-                                    SoundCell(
-                                        sound: sound,
-                                        isSelected: sound.id == selectedSoundId,
-                                        isFocused: flatIndex == focusedIndex,
-                                        samples: sampleCache[sound.id] ?? [],
-                                        isPlaying: sound.id == playingId,
-                                        progress: sound.id == playingId ? playbackProgress : 0,
-                                        onTap: {
-                                            focusedIndex = flatIndex
-                                            selectSound(sound.id)
-                                            togglePreview(sound)
-                                        }
-                                    )
-                                    .id(sound.id)
-                                }
-                            }
-                            .padding(.horizontal, Layout.gridPadding)
-                        }
-                    }
-                    .padding(.vertical, 12)
-                    // Extra bottom padding so content isn't hidden behind the keyboard hints bar
-                    .padding(.bottom, 28)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        ScrollViewReader { proxy in
+            scrollContent(proxy: proxy)
                 .onReceive(NotificationCenter.default.publisher(for: .moveSoundFocus)) { notification in
                     guard let offset = notification.userInfo?["offset"] as? Int else { return }
                     moveFocus(offset, proxy: proxy)
@@ -108,20 +69,71 @@ struct SoundPickerView: View {
                 .onDisappear {
                     stopPreview()
                 }
-            }
-
-            // Keyboard hints footer
-            HStack(spacing: 14) {
-                keyHint("\u{2190}\u{2192}\u{2191}\u{2193}", "Move")  // ←→↑↓
-                keyHint("Space", "Play")
-                keyHint("\u{21A9}", "Select + Close")                // ↩
-                keyHint("Esc", "Close")
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .frame(maxWidth: .infinity)
-            .background(.ultraThinMaterial)
         }
+    }
+
+    private var soundScrollContent: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            ForEach(Array(groupedSounds.enumerated()), id: \.element.category) { groupIndex, group in
+                if groupIndex > 0 {
+                    Divider()
+                        .padding(.vertical, 8)
+                }
+
+                Text(group.category)
+                    .font(.system(size: 13, weight: .bold))
+                    .padding(.bottom, 6)
+
+                LazyVGrid(columns: columns, spacing: Layout.gridSpacing) {
+                    ForEach(group.sounds) { sound in
+                        let flatIndex = flatSounds.firstIndex(where: { $0.id == sound.id }) ?? 0
+                        SoundCell(
+                            sound: sound,
+                            isSelected: sound.id == selectedSoundId,
+                            isFocused: flatIndex == focusedIndex,
+                            samples: sampleCache[sound.id] ?? [],
+                            isPlaying: sound.id == playingId,
+                            progress: sound.id == playingId ? playbackProgress : 0,
+                            onTap: {
+                                focusedIndex = flatIndex
+                                selectSound(sound.id)
+                                togglePreview(sound)
+                            }
+                        )
+                        .id(sound.id)
+                    }
+                }
+            }
+        }
+        .padding(Layout.gridPadding)
+    }
+
+    @ViewBuilder
+    private func scrollContent(proxy: ScrollViewProxy) -> some View {
+        if #available(macOS 13.0, *) {
+            ScrollView { soundScrollContent }
+                .safeAreaInset(edge: .bottom) { keyboardHintsBar }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+            ZStack(alignment: .bottom) {
+                ScrollView { soundScrollContent.padding(.bottom, 36) }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                keyboardHintsBar
+            }
+        }
+    }
+
+    private var keyboardHintsBar: some View {
+        HStack(spacing: 14) {
+            keyHint("\u{2190}\u{2192}\u{2191}\u{2193}", "Move")  // ←→↑↓
+            keyHint("Space", "Play")
+            keyHint("\u{21A9}", "Select + Close")                // ↩
+            keyHint("Esc", "Close")
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity)
+        .background(.ultraThinMaterial)
     }
 
     private func keyHint(_ key: String, _ label: String?) -> some View {

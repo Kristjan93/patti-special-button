@@ -16,29 +16,8 @@ struct ButtPickerView: View {
     private let columns = Array(repeating: GridItem(.flexible(), spacing: Layout.gridSpacing), count: Layout.gridColumns)
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            ScrollViewReader { proxy in
-                ScrollView {
-                    LazyVGrid(columns: columns, spacing: Layout.gridSpacing) {
-                        ForEach(Array(butts.enumerated()), id: \.element.id) { index, butt in
-                            AnimatedButtCell(
-                                butt: butt,
-                                isSelected: butt.id == selectedButtId,
-                                isFocused: index == focusedIndex,
-                                displayMode: displayMode == DisplayMode.fill.rawValue ? DisplayMode.original.rawValue : displayMode,
-                                onTap: {
-                                    focusedIndex = index
-                                    selectedButtId = butt.id
-                                }
-                            )
-                            .id("\(butt.id)-\(displayMode)")
-                        }
-                    }
-                    .padding(Layout.gridPadding)
-                    .padding(.bottom, 28)
-                }
-                .padding(.vertical, 12)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        ScrollViewReader { proxy in
+            scrollContent(proxy: proxy)
                 .onReceive(NotificationCenter.default.publisher(for: .moveFocus)) { notification in
                     guard let offset = notification.userInfo?["offset"] as? Int else { return }
                     move(offset, proxy: proxy)
@@ -53,20 +32,54 @@ struct ButtPickerView: View {
                         proxy.scrollTo("\(butts[index].id)-\(displayMode)")
                     }
                 }
-            }
-
-            // Keyboard hints footer
-            HStack(spacing: 14) {
-                keyHint("\u{2190}\u{2192}\u{2191}\u{2193}", "Preview")
-                keyHint("Space", "Select")
-                keyHint("\u{21A9}", "Select + Close")
-                keyHint("Esc", "Close")
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .frame(maxWidth: .infinity)
-            .background(.ultraThinMaterial)
         }
+    }
+
+    private var buttGridContent: some View {
+        LazyVGrid(columns: columns, spacing: Layout.gridSpacing) {
+            ForEach(Array(butts.enumerated()), id: \.element.id) { index, butt in
+                AnimatedButtCell(
+                    butt: butt,
+                    isSelected: butt.id == selectedButtId,
+                    isFocused: index == focusedIndex,
+                    displayMode: displayMode == DisplayMode.fill.rawValue ? DisplayMode.original.rawValue : displayMode,
+                    onTap: {
+                        focusedIndex = index
+                        selectedButtId = butt.id
+                    }
+                )
+                .id("\(butt.id)-\(displayMode)")
+            }
+        }
+        .padding(Layout.gridPadding)
+    }
+
+    @ViewBuilder
+    private func scrollContent(proxy: ScrollViewProxy) -> some View {
+        if #available(macOS 13.0, *) {
+            ScrollView { buttGridContent }
+                .safeAreaInset(edge: .bottom) { keyboardHintsBar }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+            ZStack(alignment: .bottom) {
+                ScrollView { buttGridContent.padding(.bottom, 36) }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                keyboardHintsBar
+            }
+        }
+    }
+
+    private var keyboardHintsBar: some View {
+        HStack(spacing: 14) {
+            keyHint("\u{2190}\u{2192}\u{2191}\u{2193}", "Preview")
+            keyHint("Space", "Select")
+            keyHint("\u{21A9}", "Select + Close")
+            keyHint("Esc", "Close")
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity)
+        .background(.ultraThinMaterial)
     }
 
     private func keyHint(_ key: String, _ label: String) -> some View {
