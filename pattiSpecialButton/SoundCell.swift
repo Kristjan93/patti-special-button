@@ -8,22 +8,11 @@ struct SoundCell: View {
     let isPlaying: Bool
     let progress: Double
     let onTap: () -> Void
-    let onPlayToggle: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            HStack(spacing: 6) {
-                Button(action: onPlayToggle) {
-                    Image(systemName: isPlaying ? "stop.fill" : "play.fill")
-                        .font(.system(size: 11))
-                        .foregroundColor(isPlaying ? .accentColor : .secondary)
-                        .frame(width: 18, height: 18)
-                }
-                .buttonStyle(.plain)
-
-                WaveformView(samples: samples, progress: isPlaying ? progress : 0)
-                    .frame(height: 24)
-            }
+            WaveformView(samples: samples, progress: isPlaying ? progress : 0)
+                .frame(height: 24)
 
             Text(sound.name)
                 .font(.system(size: 12, weight: .medium))

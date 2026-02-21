@@ -27,7 +27,7 @@ struct WaveformView: View {
                     let isPlayed = progress > progressThreshold && progress > 0
 
                     RoundedRectangle(cornerRadius: 1)
-                        .fill(isPlayed ? Color.accentColor : Color.secondary.opacity(0.3))
+                        .fill(isPlayed ? Color.accentColor : Color.secondary.opacity(0.6))
                         .frame(width: barWidth, height: barHeight)
                 }
             }

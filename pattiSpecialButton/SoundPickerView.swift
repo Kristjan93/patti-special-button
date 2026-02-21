@@ -66,8 +66,11 @@ struct SoundPickerView: View {
                                         samples: sampleCache[sound.id] ?? [],
                                         isPlaying: sound.id == playingId,
                                         progress: sound.id == playingId ? playbackProgress : 0,
-                                        onTap: { selectSound(sound.id) },
-                                        onPlayToggle: { togglePreview(sound) }
+                                        onTap: {
+                                            focusedIndex = flatIndex
+                                            selectSound(sound.id)
+                                            togglePreview(sound)
+                                        }
                                     )
                                     .id(sound.id)
                                 }
@@ -108,25 +111,38 @@ struct SoundPickerView: View {
             }
 
             // Keyboard hints footer
-            HStack(spacing: 16) {
-                keyHint("\u{2423}", "Play/Pause")
-                keyHint("\u{21A9}", "Select")
-                keyHint("\u{238B}", "Close")
+            HStack(spacing: 14) {
+                keyHint("\u{2190}\u{2192}\u{2191}\u{2193}", "Move")  // ←→↑↓
+                keyHint("Space", "Play")
+                keyHint("\u{21A9}", "Select + Close")                // ↩
+                keyHint("Esc", "Close")
             }
-            .font(.system(size: 10))
-            .foregroundColor(.secondary)
             .padding(.horizontal, 12)
-            .padding(.vertical, 6)
+            .padding(.vertical, 8)
             .frame(maxWidth: .infinity)
             .background(.ultraThinMaterial)
         }
     }
 
-    private func keyHint(_ symbol: String, _ label: String) -> some View {
-        HStack(spacing: 3) {
-            Text(symbol)
-                .font(.system(size: 11, weight: .medium, design: .monospaced))
-            Text(label)
+    private func keyHint(_ key: String, _ label: String?) -> some View {
+        HStack(spacing: 5) {
+            Text(key)
+                .font(.system(size: 10, weight: .medium))
+                .padding(.horizontal, 5)
+                .padding(.vertical, 2)
+                .background(
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(Color.secondary.opacity(0.15))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 3)
+                        .stroke(Color.secondary.opacity(0.3), lineWidth: 0.5)
+                )
+            if let label {
+                Text(label)
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+            }
         }
     }
 

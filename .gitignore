@@ -8,8 +8,11 @@ DerivedData/
 *.xcuserdatad
 xcuserdata/
 
-# Python virtual environment
-buttsss/.venv/
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
 
 # macOS
 .DS_Store

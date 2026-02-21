@@ -338,6 +338,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 NotificationCenter.default.post(name: .moveFocus, object: nil,
                                                 userInfo: ["offset": Layout.gridColumns])
                 return nil
+            case 49: // space — select focused butt without closing
+                NotificationCenter.default.post(name: .selectButtFocus, object: nil)
+                return nil
             case 36: // return
                 self.commitAndClosePopover()
                 return nil
