@@ -57,6 +57,10 @@ enum TouchBarParade {
 
         window.touchBar = touchBar
 
+        // Activate the app so the Touch Bar system recognizes our key window.
+        // Without this, Touch Bar stays blank when opening via right-click menu.
+        NSApp.activate(ignoringOtherApps: true)
+
         objc_setAssociatedObject(vc, &associatedKey, holder, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
     }
 

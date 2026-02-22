@@ -47,7 +47,7 @@ Hybrid SwiftUI + AppKit. SwiftUI provides the `@main` app lifecycle, but all men
 
 ### How the icon picker popover works
 
-The icon picker is an `NSPopover` with `.transient` behavior, shown relative to the status item button. After showing, `popover.contentViewController?.view.window?.makeKey()` gives the popover focus without activating the app — this avoids "Show Desktop" on desktop click and double-click issues on fullscreen Spaces. The popover auto-dismisses on click outside or Escape, positions itself automatically below the menu bar icon, and never shows in the Dock or Cmd+Tab. Selecting "Change Icon" while the popover is already open toggles it closed.
+The icon picker is an `NSPopover` with `.transient` behavior, shown relative to the status item button. After showing, `popover.contentViewController?.view.window?.makeKey()` gives the popover focus, and `NSApp.activate(ignoringOtherApps: true)` makes the app active so the system (including Touch Bar) recognizes the key window. The popover auto-dismisses on click outside or Escape, positions itself automatically below the menu bar icon, and never shows in the Dock or Cmd+Tab. Selecting "Change Icon" while the popover is already open toggles it closed.
 
 ### Preview-on-focus and revert-on-close
 
@@ -63,7 +63,7 @@ Both pickers have a keyboard hints footer pinned to the bottom (keycap-style bad
 
 ### Known limitation: NSPopover activation
 
-NSPopover's `.transient` dismissal ideally requires `NSApp.activate()`, but activating an LSUIElement app causes desktop clicks to trigger "Show Desktop" and fullscreen Spaces to misbehave. Using `makeKey()` instead avoids these issues. If `.transient` dismissal ever stops working, the fallback would be switching to an `NSPanel` with `.nonactivatingPanel` style mask (the pattern used by Itsycal and other menu bar apps).
+`NSApp.activate(ignoringOtherApps: true)` is called when attaching the Touch Bar parade to make the app active, which is required for the Touch Bar system to discover the key window's touch bar. Despite being an LSUIElement app, activation works correctly — no "Show Desktop" or fullscreen Spaces issues were observed.
 
 ### How butt switching works
 
