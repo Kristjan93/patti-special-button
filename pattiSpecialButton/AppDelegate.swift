@@ -355,6 +355,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         // and .transient dismissal without activating the entire app (which causes
         // "Show Desktop" on desktop click and Space-switching on fullscreen).
         popover.contentViewController?.view.window?.makeKey()
+
+        // Async so the context menu's tracking loop fully unwinds before Touch Bar setup
+        DispatchQueue.main.async {
+            if #available(macOS 10.12.2, *) { TouchBarParade.attach(to: popover) }
+        }
     }
 
     func popoverDidClose(_ notification: Notification) {
@@ -438,6 +443,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         guard let button = statusItem.button else { return }
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
         popover.contentViewController?.view.window?.makeKey()
+
+        DispatchQueue.main.async {
+            if #available(macOS 10.12.2, *) { TouchBarParade.attach(to: popover) }
+        }
     }
 
 }

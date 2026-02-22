@@ -60,6 +60,9 @@ enum Layout {
     static let soundPopoverSize = NSSize(width: 420, height: 500)
     static let soundCellHeight: CGFloat = 90
     static let waveformBarCount = 25
+
+    static let touchBarButtSize: CGFloat = 30
+    static let touchBarButtSpacing: CGFloat = 8
 }
 
 enum Credits {
