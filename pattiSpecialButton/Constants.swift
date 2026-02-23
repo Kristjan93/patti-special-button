@@ -1,4 +1,4 @@
-import Foundation
+import AppKit
 
 enum Defaults {
     static let selectedButtIdKey = "selectedButtId"
@@ -7,14 +7,36 @@ enum Defaults {
 
     static let defaultButtId = "asynchronous-butt"
     static let defaultIconSize = "fun-size"
-    static let defaultDisplayMode = "fill"
+    static let defaultDisplayMode = "stencil"
 
     static let selectedSoundIdKey = "selectedSoundId"
     static let defaultSoundId = "perfect-fart"
 }
 
 enum DisplayMode: String {
-    case fill, outline, original
+    case stencil, outline, original
+
+    func processFrame(_ image: NSImage, size: NSSize) -> NSImage {
+        let rect = NSRect(origin: .zero, size: size)
+        let result = NSImage(size: size)
+        result.lockFocus()
+        switch self {
+        case .stencil:
+            NSColor.white.set()
+            rect.fill()
+            image.draw(in: rect, from: .zero, operation: .destinationOut, fraction: 1.0)
+            result.isTemplate = true
+        case .original:
+            NSColor.white.drawSwatch(in: rect)
+            image.draw(in: rect)
+            result.isTemplate = false
+        case .outline:
+            image.draw(in: rect)
+            result.isTemplate = true
+        }
+        result.unlockFocus()
+        return result
+    }
 }
 
 enum IconSize: String {
@@ -58,7 +80,6 @@ enum Layout {
 
     static let soundGridColumns = 2
     static let soundPopoverSize = NSSize(width: 420, height: 500)
-    static let soundCellHeight: CGFloat = 90
     static let waveformBarCount = 25
 
     static let touchBarButtSize: CGFloat = 30
@@ -69,4 +90,18 @@ enum Credits {
     static let buttsssURL = URL(string: "https://www.buttsss.com/")!
     static let freesoundURL = URL(string: "https://freesound.org/people/jixolros/")!
     static let licenseURL = URL(string: "https://creativecommons.org/licenses/by/4.0/")!
+}
+
+// MARK: - Notification Names
+
+extension Notification.Name {
+    // Icon picker
+    static let previewButt = Notification.Name("previewButt")
+    static let moveFocus = Notification.Name("moveFocus")
+    static let selectButtFocus = Notification.Name("selectButtFocus")
+
+    // Sound picker
+    static let toggleSoundPreview = Notification.Name("toggleSoundPreview")
+    static let moveSoundFocus = Notification.Name("moveSoundFocus")
+    static let confirmAndCloseSound = Notification.Name("confirmAndCloseSound")
 }

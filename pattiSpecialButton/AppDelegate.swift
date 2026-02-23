@@ -46,7 +46,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 
     private var currentDisplayMode: DisplayMode {
         let raw = UserDefaults.standard.string(forKey: Defaults.displayModeKey) ?? Defaults.defaultDisplayMode
-        return DisplayMode(rawValue: raw) ?? .fill
+        return DisplayMode(rawValue: raw) ?? .stencil
     }
 
     // MARK: - App Lifecycle
@@ -104,26 +104,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         animator?.stop()
 
         let mode = currentDisplayMode
-        let isTemplate = mode != .original
-
         let newAnimator = FrameAnimator(buttInfo: buttInfo)
-
         let size = NSSize(width: currentIconSize, height: currentIconSize)
-        menuBarFrames = newAnimator.frames.map { original in
-            let base: NSImage
-            switch mode {
-            case .fill:
-                base = invertAlpha(original, size: size)
-            case .original:
-                base = compositeOnWhite(original, size: size)
-            case .outline:
-                let copy = original.copy() as! NSImage
-                copy.size = size
-                base = copy
-            }
-            base.isTemplate = isTemplate
-            return base
-        }
+        menuBarFrames = newAnimator.frames.map { mode.processFrame($0, size: size) }
 
         animatorSubscription = newAnimator.$currentFrameIndex
             .sink { [weak self] index in
@@ -144,26 +127,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     private func commitAndClosePopover() {
         committedButtId = currentButtId
         iconPickerPopover?.performClose(nil)
-    }
-
-    private func invertAlpha(_ image: NSImage, size: NSSize) -> NSImage {
-        let result = NSImage(size: size)
-        result.lockFocus()
-        NSColor.white.set()
-        NSRect(origin: .zero, size: size).fill()
-        image.draw(in: NSRect(origin: .zero, size: size), from: .zero,
-                   operation: .destinationOut, fraction: 1.0)
-        result.unlockFocus()
-        return result
-    }
-
-    private func compositeOnWhite(_ image: NSImage, size: NSSize) -> NSImage {
-        let result = NSImage(size: size)
-        result.lockFocus()
-        NSColor.white.drawSwatch(in: NSRect(origin: .zero, size: size))
-        image.draw(in: NSRect(origin: .zero, size: size))
-        result.unlockFocus()
-        return result
     }
 
     // MARK: - Status Item Setup
@@ -228,7 +191,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         let displaySubmenu = NSMenu()
         let currentMode = currentDisplayMode
 
-        for (mode, label) in [(DisplayMode.fill, "Stencil"), (.outline, "Outline")] {
+        for (mode, label) in [(DisplayMode.stencil, "Stencil"), (.outline, "Outline")] {
             let item = NSMenuItem(title: label, action: #selector(selectDisplayMode(_:)), keyEquivalent: "")
             item.target = self
             item.representedObject = mode.rawValue
@@ -371,14 +334,24 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             NotificationCenter.default.removeObserver(obs)
             previewObservation = nil
         }
-        // Revert to committed butt if we were previewing something else
-        if let committed = committedButtId, committed != lastLoadedButtId {
-            loadButtById(committed)
-            lastLoadedButtId = committed
-            lastLoadedIconSize = currentIconSize
+        // Only revert butt preview when the icon picker closes
+        if notification.object as? NSPopover === iconPickerPopover {
+            if let committed = committedButtId, committed != lastLoadedButtId {
+                loadButtById(committed)
+                lastLoadedButtId = committed
+                lastLoadedIconSize = currentIconSize
+            }
         }
         committedButtId = nil
         committedSoundId = nil
+
+        // Release the popover and its NSHostingController so SwiftUI tears down
+        // the view tree and FrameAnimator @StateObjects are deallocated.
+        if notification.object as? NSPopover === iconPickerPopover {
+            iconPickerPopover = nil
+        } else if notification.object as? NSPopover === soundPickerPopover {
+            soundPickerPopover = nil
+        }
     }
 
     // MARK: - Sound Picker Popover
@@ -410,8 +383,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             self.soundPickerPopover?.performClose(nil)
         }
 
-        keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            guard let self else { return event }
+        keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             switch event.keyCode {
             case 49: // space
                 NotificationCenter.default.post(name: .toggleSoundPreview, object: nil)

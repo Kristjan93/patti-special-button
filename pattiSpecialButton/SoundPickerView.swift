@@ -1,12 +1,6 @@
 import AVFoundation
 import SwiftUI
 
-extension Notification.Name {
-    static let toggleSoundPreview = Notification.Name("toggleSoundPreview")
-    static let moveSoundFocus = Notification.Name("moveSoundFocus")
-    static let confirmAndCloseSound = Notification.Name("confirmAndCloseSound")
-}
-
 struct SoundPickerView: View {
     @AppStorage(Defaults.selectedSoundIdKey) private var selectedSoundId = Defaults.defaultSoundId
     @State private var focusedIndex: Int = 0

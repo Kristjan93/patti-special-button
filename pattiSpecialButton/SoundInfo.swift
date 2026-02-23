@@ -16,12 +16,16 @@ struct SoundInfo: Codable, Identifiable {
     }
 }
 
-func loadSoundManifest() -> [SoundInfo] {
-    guard let url = Bundle.main.url(
-        forResource: Assets.soundsManifestFile, withExtension: "json", subdirectory: Assets.soundsDir
-    ),
-    let data = try? Data(contentsOf: url),
-    let sounds = try? JSONDecoder().decode([SoundInfo].self, from: data)
-    else { return [] }
-    return sounds
-}
+// Decoded once on first access, shared across all callers.
+let loadSoundManifest: () -> [SoundInfo] = {
+    let cached: [SoundInfo] = {
+        guard let url = Bundle.main.url(
+            forResource: Assets.soundsManifestFile, withExtension: "json", subdirectory: Assets.soundsDir
+        ),
+        let data = try? Data(contentsOf: url),
+        let sounds = try? JSONDecoder().decode([SoundInfo].self, from: data)
+        else { return [] }
+        return sounds
+    }()
+    return { cached }
+}()

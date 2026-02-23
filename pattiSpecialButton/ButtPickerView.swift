@@ -1,12 +1,6 @@
 import SwiftUI
 import Combine
 
-extension Notification.Name {
-    static let previewButt = Notification.Name("previewButt")
-    static let moveFocus = Notification.Name("moveFocus")
-    static let selectButtFocus = Notification.Name("selectButtFocus")
-}
-
 struct ButtPickerView: View {
     @AppStorage(Defaults.selectedButtIdKey) private var selectedButtId = Defaults.defaultButtId
     @AppStorage(Defaults.displayModeKey) private var displayMode = Defaults.defaultDisplayMode
@@ -42,7 +36,8 @@ struct ButtPickerView: View {
                     butt: butt,
                     isSelected: butt.id == selectedButtId,
                     isFocused: index == focusedIndex,
-                    displayMode: displayMode == DisplayMode.fill.rawValue ? DisplayMode.original.rawValue : displayMode,
+                    // Stencil mode's inverted-alpha rectangles are unreadable at grid size — show Original instead
+                    displayMode: displayMode == DisplayMode.stencil.rawValue ? DisplayMode.original.rawValue : displayMode,
                     onTap: {
                         focusedIndex = index
                         selectedButtId = butt.id

@@ -12,14 +12,16 @@ struct AnimatedButtCell: View {
     @StateObject private var animator: FrameAnimator
 
     init(butt: ButtInfo, isSelected: Bool, isFocused: Bool = false,
-         displayMode: String = DisplayMode.fill.rawValue,
+         displayMode: String = DisplayMode.stencil.rawValue,
          onTap: @escaping () -> Void) {
         self.butt = butt
         self.isSelected = isSelected
         self.isFocused = isFocused
         self.displayMode = displayMode
         self.onTap = onTap
-        _animator = StateObject(wrappedValue: FrameAnimator(buttInfo: butt, invertAlpha: displayMode == DisplayMode.fill.rawValue))
+        // Picker cells use raw frames — display mode is handled visually via
+        // SwiftUI .renderingMode and background color, not per-frame image processing.
+        _animator = StateObject(wrappedValue: FrameAnimator(buttInfo: butt))
     }
 
     var body: some View {

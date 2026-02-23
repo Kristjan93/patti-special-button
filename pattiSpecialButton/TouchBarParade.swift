@@ -6,6 +6,10 @@ import ObjectiveC
 // when a picker popover is open. Tapping a butt selects it (writes to UserDefaults,
 // menu bar updates via existing observer). Uses NSScrubber for native scroll + tap.
 // Entirely self-contained — AppDelegate calls attach(to:) and forgets about it.
+//
+// All frame loading is deferred until the system actually requests scrubber cells
+// via the NSScrubberDataSource. On Macs without a Touch Bar, the delegate method
+// is never called and zero animators/frames are created.
 
 @available(macOS 10.12.2, *)
 enum TouchBarParade {
@@ -25,19 +29,8 @@ enum TouchBarParade {
 
         let modeRaw = UserDefaults.standard.string(forKey: Defaults.displayModeKey)
             ?? Defaults.defaultDisplayMode
-        let displayMode = DisplayMode(rawValue: modeRaw) ?? .fill
+        let displayMode = DisplayMode(rawValue: modeRaw) ?? .stencil
         let size = NSSize(width: Layout.touchBarButtSize, height: Layout.touchBarButtSize)
-
-        var animators: [FrameAnimator] = []
-        var allFrames: [[NSImage]] = []
-
-        for info in manifest {
-            let animator = FrameAnimator(buttInfo: info)
-            let frames = animator.frames.map { Self.processFrame($0, mode: displayMode, size: size) }
-            animators.append(animator)
-            allFrames.append(frames)
-            if animator.frames.count > 1 { animator.start() }
-        }
 
         let selectedId = UserDefaults.standard.string(forKey: Defaults.selectedButtIdKey)
             ?? Defaults.defaultButtId
@@ -45,8 +38,8 @@ enum TouchBarParade {
 
         let holder = ParadeHolder(
             manifest: manifest,
-            animators: animators,
-            processedFrames: allFrames,
+            displayMode: displayMode,
+            frameSize: size,
             initialScrollIndex: selectedIndex
         )
 
@@ -64,31 +57,6 @@ enum TouchBarParade {
         objc_setAssociatedObject(vc, &associatedKey, holder, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
     }
 
-    // MARK: - Frame processing
-
-    fileprivate static func processFrame(_ image: NSImage, mode: DisplayMode, size: NSSize) -> NSImage {
-        let rect = NSRect(origin: .zero, size: size)
-        let result = NSImage(size: size)
-        result.lockFocus()
-
-        switch mode {
-        case .fill:
-            NSColor.white.set()
-            rect.fill()
-            image.draw(in: rect, from: .zero, operation: .destinationOut, fraction: 1.0)
-            result.isTemplate = true
-        case .original:
-            NSColor.white.drawSwatch(in: rect)
-            image.draw(in: rect)
-            result.isTemplate = false
-        case .outline:
-            image.draw(in: rect)
-            result.isTemplate = true
-        }
-
-        result.unlockFocus()
-        return result
-    }
 }
 
 // MARK: - ParadeHolder
@@ -97,18 +65,32 @@ enum TouchBarParade {
 private class ParadeHolder: NSObject, NSTouchBarDelegate, NSScrubberDataSource, NSScrubberDelegate {
 
     let manifest: [ButtInfo]
-    let animators: [FrameAnimator]
-    let processedFrames: [[NSImage]]
+    let displayMode: DisplayMode
+    let frameSize: NSSize
     let initialScrollIndex: Int
     var nsTouchBar: NSTouchBar?
 
+    // Lazily populated when the scrubber requests cells.
+    private var animators: [Int: FrameAnimator] = [:]
+    private var processedFrames: [Int: [NSImage]] = [:]
+
     private static let scrubberItemId = NSUserInterfaceItemIdentifier("buttScrubberItem")
 
-    init(manifest: [ButtInfo], animators: [FrameAnimator], processedFrames: [[NSImage]], initialScrollIndex: Int) {
+    init(manifest: [ButtInfo], displayMode: DisplayMode, frameSize: NSSize, initialScrollIndex: Int) {
         self.manifest = manifest
-        self.animators = animators
-        self.processedFrames = processedFrames
+        self.displayMode = displayMode
+        self.frameSize = frameSize
         self.initialScrollIndex = initialScrollIndex
+    }
+
+    private func ensureLoaded(at index: Int) {
+        guard animators[index] == nil else { return }
+        let info = manifest[index]
+        let animator = FrameAnimator(buttInfo: info)
+        let frames = animator.frames.map { displayMode.processFrame($0, size: frameSize) }
+        animators[index] = animator
+        processedFrames[index] = frames
+        if animator.frames.count > 1 { animator.start() }
     }
 
     // MARK: NSTouchBarDelegate
@@ -151,8 +133,9 @@ private class ParadeHolder: NSObject, NSTouchBarDelegate, NSScrubberDataSource, 
     }
 
     func scrubber(_ scrubber: NSScrubber, viewForItemAt index: Int) -> NSScrubberItemView {
+        ensureLoaded(at: index)
         let item = scrubber.makeItem(withIdentifier: Self.scrubberItemId, owner: nil) as! AnimatedButtScrubberItem
-        item.configure(animator: animators[index], frames: processedFrames[index])
+        item.configure(animator: animators[index]!, frames: processedFrames[index]!)
         return item
     }
 
@@ -164,7 +147,7 @@ private class ParadeHolder: NSObject, NSTouchBarDelegate, NSScrubberDataSource, 
     }
 
     deinit {
-        for animator in animators { animator.stop() }
+        for animator in animators.values { animator.stop() }
     }
 }
 
