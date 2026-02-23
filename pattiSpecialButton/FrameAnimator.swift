@@ -54,7 +54,12 @@ class FrameAnimator: ObservableObject {
             t.setEventHandler { [weak self] in self?.advanceFrame() }
             timer = t
         }
-        timer?.schedule(deadline: .now() + frameDelays[currentFrameIndex])
+        // frameDelays comes from the manifest, frames from disk — a mismatch
+        // (e.g. partial manifest update) would crash without this guard.
+        let delay = currentFrameIndex < frameDelays.count
+            ? frameDelays[currentFrameIndex]
+            : frameDelays.last ?? 0.1
+        timer?.schedule(deadline: .now() + delay)
         if needsResume {
             timer?.resume()
         }
