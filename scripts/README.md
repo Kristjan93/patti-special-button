@@ -13,17 +13,14 @@ Thank you Pablo for knowing what it's all about.
 
 ## Prerequisites
 
-- Python 3.12+ (managed via pyenv)
-- pip
+- [uv](https://docs.astral.sh/uv/) (`brew install uv`)
 - ffmpeg (for sound-check.py: `brew install ffmpeg`)
 
 ## Setup
 
 ```bash
 cd scripts/
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+uv sync
 ```
 
 ## Butt Pipeline
@@ -31,8 +28,7 @@ pip install -r requirements.txt
 Extracts frames from animated GIFs, converts to RGBA PNGs (black outlines with alpha transparency), resizes to 160x160, and writes a manifest.
 
 ```bash
-source .venv/bin/activate
-python3 brazilian-butt-lift.py
+uv run brazilian-butt-lift.py
 ```
 
 ### What it does
@@ -60,7 +56,7 @@ fractured-but-whole/             ButtFrames/
 ### Adding a new butt
 
 1. Drop the GIF into `fractured-but-whole/`
-2. Run `python3 brazilian-butt-lift.py`
+2. Run `uv run brazilian-butt-lift.py`
 3. Build the app in Xcode
 
 The GIF should be 512x512 with black line art on a white background for best results.
@@ -82,8 +78,8 @@ The GIF should be 512x512 with black line art on a white background for best res
 Scans the `sounds/` directory, converts unsupported formats to WAV, and generates/updates `sounds-manifest.json`. Existing entries (names, categories) are preserved — only new files get auto-generated defaults.
 
 ```bash
-python3 sound-check.py            # scan, convert, update manifest
-python3 sound-check.py --dry-run  # preview changes without modifying anything
+uv run sound-check.py            # scan, convert, update manifest
+uv run sound-check.py --dry-run  # preview changes without modifying anything
 ```
 
 Supported formats (playable by AVAudioPlayer on macOS 12+): `.wav`, `.mp3`, `.m4a`, `.aiff`
@@ -93,7 +89,7 @@ Unsupported formats (auto-converted to .wav): `.flac`, `.ogg`, `.wma`, `.opus`
 ### Adding a new sound
 
 1. Drop the audio file into `sounds/`
-2. Run `python3 sound-check.py`
+2. Run `uv run sound-check.py`
 3. Edit `sounds/sounds-manifest.json` to set the name and category
 4. Build the app in Xcode
 
@@ -114,8 +110,9 @@ scripts/
   README.md                  <- you are here
   brazilian-butt-lift.py     <- butt frame extractor
   sound-check.py             <- sound asset manager
-  requirements.txt           <- Pillow (for butt script)
-  .python-version            <- pyenv (3.12.8)
+  pyproject.toml             <- dependencies (Pillow, pydub)
+  uv.lock                    <- pinned dependency versions
+  .python-version            <- Python 3.12 (managed by uv)
   .venv/                     <- virtual environment (gitignored)
   fractured-but-whole/       <- source GIFs
     Alien-Butt.gif

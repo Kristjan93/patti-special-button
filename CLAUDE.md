@@ -93,7 +93,7 @@ Same lifecycle pattern as the icon picker. `showSoundPicker()` creates an `NSPop
 ### Adding a new sound
 
 1. Drop the audio file (WAV or MP3) into `sounds/`
-2. Run `cd scripts && source .venv/bin/activate && python3 sound-check.py`
+2. Run `cd scripts && uv run sound-check.py`
 3. Edit `sounds/sounds-manifest.json` to set the display name and category
 4. Build in Xcode — the folder reference picks up changes automatically
 
@@ -112,7 +112,7 @@ Planned two-manifest approach: bundled manifest (read-only in app bundle) + user
 ### Adding a new butt
 
 1. Drop the GIF into `scripts/fractured-but-whole/`
-2. Run `cd scripts && source .venv/bin/activate && python3 brazilian-butt-lift.py`
+2. Run `cd scripts && uv run brazilian-butt-lift.py`
 3. Build in Xcode — the folder reference picks up changes automatically
 
 ### RGBA images and display mode processing
@@ -143,8 +143,8 @@ pattiSpecialButton/
   scripts/                         <- asset pipeline
     brazilian-butt-lift.py         <- butt frame extractor
     sound-check.py                 <- sound asset manager
-    requirements.txt
-    .python-version (3.12.8)
+    pyproject.toml
+    .python-version (3.12)
     fractured-but-whole/           <- source GIFs
       Alien-Butt.gif ... vampire-butt.gif
   pattiSpecialButton/              <- app source (Xcode auto-synced)
