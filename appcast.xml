@@ -4,5 +4,17 @@
     <title>pattiSpecialButton</title>
     <description>Updates for Patti Special Button</description>
     <language>en</language>
+    <item>
+      <title>Version 1.0</title>
+      <pubDate>Sun, 01 Mar 2026 22:53:40 +0000</pubDate>
+      <sparkle:version>1</sparkle:version>
+      <sparkle:shortVersionString>1.0</sparkle:shortVersionString>
+      <enclosure
+        url="https://github.com/Kristjan93/patti-special-button/releases/download/v1.0/PattiSpecialButton-v1.0.dmg"
+        type="application/octet-stream"
+        sparkle:edSignature="p1yCIJCyy5ZXTxJ7G1oNR6IJ1Np07C2/o50jfN7wxrqK0vKtQ7vDcIY9R0AMXmZMO+P2feo3ennzqcW9OCRNBg=="
+        length="5409216"
+      />
+    </item>
   </channel>
 </rss>

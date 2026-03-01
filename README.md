@@ -2,6 +2,8 @@
 
 A macOS menu bar app. A wiggling animated butt lives in the menu bar and plays a fart sound when clicked. Choose from 47 different butt icons by Pablo Stanley.
 
+## [Download the latest release](https://github.com/Kristjan93/patti-special-button/releases/latest)
+
 ## Features
 
 - **Animated menu bar icon** — a butt that wiggles continuously (variable frame timing from source GIFs)

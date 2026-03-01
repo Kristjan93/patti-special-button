@@ -37,9 +37,22 @@
 		F1E2D3C4B5A6978869504132 /* sounds */ = {isa = PBXFileReference; lastKnownFileType = folder; path = sounds; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		AAAA00042F44C9000022AAA4 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 9F0FB7B12F44C8FE002228F8 /* pattiSpecialButton */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		9F0FB7B42F44C8FE002228F8 /* pattiSpecialButton */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				AAAA00042F44C9000022AAA4 /* PBXFileSystemSynchronizedBuildFileExceptionSet */,
+			);
 			path = pattiSpecialButton;
 			sourceTree = "<group>";
 		};

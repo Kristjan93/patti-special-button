@@ -251,9 +251,14 @@ echo ""
 APPCAST_FILE="$PROJECT_DIR/appcast.xml"
 
 if [ -f "$APPCAST_FILE" ]; then
-    # Insert the item before </channel>
-    ESCAPED_ITEM=$(echo "$APPCAST_ITEM" | sed 's/\\/\\\\/g; s/&/\\&/g')
-    sed -i '' "s|  </channel>|${ESCAPED_ITEM}\n  </channel>|" "$APPCAST_FILE"
+    # Insert the item before </channel> using python for reliable multi-line insertion
+    python3 -c "
+import sys
+appcast = open(sys.argv[1]).read()
+item = sys.argv[2]
+appcast = appcast.replace('  </channel>', item + '\n  </channel>')
+open(sys.argv[1], 'w').write(appcast)
+" "$APPCAST_FILE" "$APPCAST_ITEM"
     echo "Updated appcast.xml with new entry."
 else
     echo "Warning: appcast.xml not found at $APPCAST_FILE"
