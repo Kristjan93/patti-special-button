@@ -134,8 +134,10 @@ private class ParadeHolder: NSObject, NSTouchBarDelegate, NSScrubberDataSource, 
 
     func scrubber(_ scrubber: NSScrubber, viewForItemAt index: Int) -> NSScrubberItemView {
         ensureLoaded(at: index)
-        let item = scrubber.makeItem(withIdentifier: Self.scrubberItemId, owner: nil) as! AnimatedButtScrubberItem
-        item.configure(animator: animators[index]!, frames: processedFrames[index]!)
+        guard let item = scrubber.makeItem(withIdentifier: Self.scrubberItemId, owner: nil) as? AnimatedButtScrubberItem,
+              let animator = animators[index],
+              let frames = processedFrames[index] else { return NSScrubberItemView() }
+        item.configure(animator: animator, frames: frames)
         return item
     }
 
