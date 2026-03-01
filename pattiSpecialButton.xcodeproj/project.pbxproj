@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		2D49E938BDFD41A197956296 /* ButtFrames in Resources */ = {isa = PBXBuildFile; fileRef = E93A83B1F3024B7692613BF8 /* ButtFrames */; };
 		A1B2C3D4E5F647A8B9C0D1E2 /* sounds in Resources */ = {isa = PBXBuildFile; fileRef = F1E2D3C4B5A6978869504132 /* sounds */; };
+		AAAA00032F44C9000022AAA3 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = AAAA00022F44C9000022AAA2 /* Sparkle */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -59,6 +60,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AAAA00032F44C9000022AAA3 /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -121,6 +123,7 @@
 			);
 			name = pattiSpecialButton;
 			packageProductDependencies = (
+				AAAA00022F44C9000022AAA2 /* Sparkle */,
 			);
 			productName = pattiSpecialButton;
 			productReference = 9F0FB7B22F44C8FE002228F8 /* pattiSpecialButton.app */;
@@ -204,6 +207,9 @@
 			);
 			mainGroup = 9F0FB7A92F44C8FE002228F8;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				AAAA00012F44C9000022AAA1 /* XCRemoteSwiftPackageReference "Sparkle" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 9F0FB7B32F44C8FE002228F8 /* Products */;
 			projectDirPath = "";
@@ -413,6 +419,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = pattiSpecialButton/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = PattiSpecialButton;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.entertainment";
 				INFOPLIST_KEY_LSUIElement = YES;
@@ -443,6 +450,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = pattiSpecialButton/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = PattiSpecialButton;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.entertainment";
 				INFOPLIST_KEY_LSUIElement = YES;
@@ -568,6 +576,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		AAAA00012F44C9000022AAA1 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		AAAA00022F44C9000022AAA2 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AAAA00012F44C9000022AAA1 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 9F0FB7AA2F44C8FE002228F8 /* Project object */;
 }
