@@ -1,6 +1,7 @@
 import AppKit
 import AVFoundation
 import Combine
+import Sparkle
 import SwiftUI
 
 // Transparent view placed on top of the status bar button to intercept mouse events.
@@ -15,6 +16,10 @@ class StatusItemMouseView: NSView {
 }
 
 class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDelegate {
+
+    let updaterController = SPUStandardUpdaterController(
+        startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil
+    )
 
     private var statusItem: NSStatusItem!
     private var animator: FrameAnimator?
@@ -243,6 +248,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         let creditsItem = NSMenuItem(title: "Credits", action: #selector(creditsMenuAction), keyEquivalent: "")
         creditsItem.target = self
         menu.addItem(creditsItem)
+
+        let updateItem = NSMenuItem(
+            title: "Check for Updates\u{2026}",
+            action: #selector(SPUStandardUpdaterController.checkForUpdates(_:)),
+            keyEquivalent: ""
+        )
+        updateItem.target = updaterController
+        menu.addItem(updateItem)
+
+        menu.addItem(NSMenuItem.separator())
 
         menu.addItem(NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
 

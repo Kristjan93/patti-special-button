@@ -9,14 +9,12 @@ set -euo pipefail
 
 APP_NAME="PattiSpecialButton"
 APP_TARGET="pattiSpecialButton"
-DMG_NAME="${APP_NAME}-v1.0"
 VOL_NAME="${APP_NAME}"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 BG_IMAGE="$SCRIPT_DIR/dmg-background.png"
 STAGING_DIR="$SCRIPT_DIR/.dmg-staging"
-DMG_OUTPUT="$PROJECT_DIR/${DMG_NAME}.dmg"
 
 # Find the .app
 if [ $# -ge 1 ]; then
@@ -48,6 +46,13 @@ if [ ! -d "$APP_PATH" ]; then
 fi
 
 echo "Using app: $APP_PATH"
+
+# Read version from the built app's Info.plist
+VERSION=$(/usr/libexec/PlistBuddy -c "Print CFBundleShortVersionString" "$APP_PATH/Contents/Info.plist" 2>/dev/null || echo "0.0")
+DMG_NAME="${APP_NAME}-v${VERSION}"
+DMG_OUTPUT="$PROJECT_DIR/${DMG_NAME}.dmg"
+
+echo "Version: $VERSION"
 
 # Clean up previous artifacts
 rm -rf "$STAGING_DIR"

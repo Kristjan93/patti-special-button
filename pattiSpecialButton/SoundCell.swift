@@ -14,10 +14,11 @@ struct SoundCell: View {
             WaveformView(samples: samples, progress: isPlaying ? progress : 0)
                 .frame(height: 24)
 
-            Text(sound.name)
-                .font(.system(size: 12, weight: .medium))
-                .lineLimit(1)
-                .truncationMode(.tail)
+            MarqueeText(
+                text: sound.name,
+                font: .system(size: 12, weight: .medium),
+                color: .primary
+            )
 
             if sound.isShuffle {
                 HStack(spacing: 5) {
@@ -29,11 +30,11 @@ struct SoundCell: View {
                     )
                 }
             } else {
-                Text(sound.displayFilename)
-                    .font(.system(size: 9))
-                    .foregroundColor(.secondary)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
+                MarqueeText(
+                    text: sound.displayFilename,
+                    font: .system(size: 9),
+                    color: .secondary
+                )
             }
         }
         .padding(Layout.cellPadding)

@@ -162,11 +162,16 @@ pattiSpecialButton/
     shuffle_204805__ezcah__spanking_00.wav ... _05.wav  <- shuffle segments
     shuffle_556505__jixolros__small-realpoots105-110_00.wav ... _04.wav
     ...12 sounds (10 regular + 2 shuffle with 11 segments)
-  scripts/                         <- asset pipeline
+  appcast.xml                      <- Sparkle update feed (pushed to GitHub)
+  scripts/                         <- build & asset pipeline
+    release.sh                     <- full release automation
+    create-dmg.sh                  <- DMG packaging
     brazilian-butt-lift.py         <- butt frame extractor
     sound-check.py                 <- sound asset manager
     shuffle_segments.py            <- silence-based audio splitting
     waveform_samples.py            <- waveform amplitude computation
+    generate-app-icon.py           <- app icon generator
+    dmg-background.png             <- DMG installer background
     pyproject.toml
     .python-version (3.12)
     fractured-but-whole/           <- source GIFs
@@ -184,7 +189,10 @@ pattiSpecialButton/
     SoundCell.swift
     WaveformView.swift
     Constants.swift
+    TouchBarParade.swift
     CreditsView.swift
+    Info.plist                     <- Sparkle keys (SUFeedURL, SUPublicEDKey)
+    pattiSpecialButton.entitlements
     Assets.xcassets/
   docs/plans/                      <- design docs
 ```
@@ -198,9 +206,53 @@ pattiSpecialButton/
 
 Add comments only where the code's intent isn't obvious from reading it. Each comment should explain WHY this approach was chosen — not what the code does. Comment on: workarounds, non-obvious constraints, business logic rationale, and decisions where an alternative approach was deliberately rejected. Never restate what the code already says.
 
-## Build notes
+## Build & release
 
-- macOS 15.4 deployment target, Swift 5
-- App sandbox enabled
+- macOS 12.0 deployment target, Swift 5
+- App sandbox enabled with `network.client` entitlement (required for Sparkle update checks)
 - Bundle ID: `com.pattiVoice.pattiSpecialButton`
-- Signing: may need ad-hoc signing (`CODE_SIGN_IDENTITY="-"`) if certificate is expired
+- Signing: ad-hoc (local/friends distribution). Developer ID + notarization required for public release.
+- Xcode scheme: `pattiSpecialButton` (the only scheme). Debug for development, Release for distribution.
+- Universal Binary: `ARCHS="arm64 x86_64" ONLY_ACTIVE_ARCH=NO`
+
+### Versioning
+
+Two fields in Xcode → target → General → Identity:
+- **Version** (`MARKETING_VERSION`): user-facing, e.g. `1.0`, `1.1`. Follows semver.
+- **Build** (`CURRENT_PROJECT_VERSION`): integer, monotonically increasing. Sparkle uses this for update ordering.
+
+Both must be bumped before each release.
+
+### Release workflow
+
+`./scripts/release.sh` automates the full pipeline: build → DMG → sign → appcast update.
+
+Steps:
+1. Bump Version and Build in Xcode (target → General → Identity)
+2. Run `./scripts/release.sh`
+3. Commit `appcast.xml`, tag, push, upload DMG to GitHub Releases
+
+Use `--skip-build` to repackage without rebuilding.
+
+### Sparkle auto-updates
+
+- Framework: Sparkle 2.9.0 via Swift Package Manager
+- Feed URL: `https://raw.githubusercontent.com/Kristjan93/patti-special-button/main/appcast.xml`
+- Signing: EdDSA (Ed25519). Private key in Keychain under account `patti-special-button`.
+- Public key in `pattiSpecialButton/Info.plist` (`SUPublicEDKey`).
+- `SUFeedURL` and `SUPublicEDKey` live in a supplementary `Info.plist` (not `INFOPLIST_KEY_` build settings, which silently drop custom keys).
+- Sign DMGs with: `sign_update MyApp.dmg --account patti-special-button`
+
+### DMG packaging
+
+`scripts/create-dmg.sh` — reads version from the built app's Info.plist (not hardcoded). Uses `create-dmg` (brew) with a custom background image. Output: `PattiSpecialButton-v{VERSION}.dmg` in project root.
+
+### Scripts
+
+| Script | Purpose |
+|--------|---------|
+| `scripts/release.sh` | Full release automation: build → DMG → sign → appcast |
+| `scripts/create-dmg.sh` | DMG packaging with drag-to-Applications layout |
+| `scripts/brazilian-butt-lift.py` | GIF → RGBA PNG frame extraction |
+| `scripts/sound-check.py` | Sound format conversion, splitting, waveform computation |
+| `scripts/generate-app-icon.py` | App icon generation from butt GIF frame |
