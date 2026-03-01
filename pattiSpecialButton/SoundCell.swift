@@ -20,16 +20,8 @@ struct SoundCell: View {
                 color: .primary
             )
 
-            if sound.isShuffle {
-                HStack(spacing: 5) {
-                    shufflePill
-                    MarqueeText(
-                        text: sound.displayFilename,
-                        font: .system(size: 9),
-                        color: .secondary
-                    )
-                }
-            } else {
+            HStack(spacing: 5) {
+                if sound.isShuffle { shufflePill }
                 MarqueeText(
                     text: sound.displayFilename,
                     font: .system(size: 9),

@@ -6,7 +6,11 @@ struct ButtPickerView: View {
     @AppStorage(Defaults.displayModeKey) private var displayMode = Defaults.defaultDisplayMode
     @State private var focusedIndex: Int = 0
 
-    private let butts: [ButtInfo] = loadButtManifest()
+    private var parsedDisplayMode: DisplayMode {
+        DisplayMode(rawValue: displayMode) ?? .stencil
+    }
+
+    private let butts: [ButtInfo] = buttManifest
     private let columns = Array(repeating: GridItem(.flexible(), spacing: Layout.gridSpacing), count: Layout.gridColumns)
 
     var body: some View {
@@ -37,7 +41,7 @@ struct ButtPickerView: View {
                     isSelected: butt.id == selectedButtId,
                     isFocused: index == focusedIndex,
                     // Stencil mode's inverted-alpha rectangles are unreadable at grid size — show Original instead
-                    displayMode: displayMode == DisplayMode.stencil.rawValue ? DisplayMode.original.rawValue : displayMode,
+                    displayMode: parsedDisplayMode == .stencil ? .original : parsedDisplayMode,
                     onTap: {
                         focusedIndex = index
                         selectedButtId = butt.id

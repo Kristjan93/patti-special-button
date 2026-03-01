@@ -65,8 +65,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        buttLookup = Dictionary(uniqueKeysWithValues: loadButtManifest().map { ($0.id, $0) })
-        soundLookup = Dictionary(uniqueKeysWithValues: loadSoundManifest().map { ($0.id, $0) })
+        buttLookup = Dictionary(uniqueKeysWithValues: buttManifest.map { ($0.id, $0) })
+        soundLookup = Dictionary(uniqueKeysWithValues: soundManifest.map { ($0.id, $0) })
         setupStatusItem()
         loadButt()
 
@@ -324,37 +324,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             self?.previewButt(buttId)
         }
 
-        // Arrow keys and Return are handled via NSEvent monitor instead of SwiftUI's
-        // .onKeyPress (macOS 14+), so keyboard nav works back to macOS 12.
-        keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            guard let self else { return event }
-            switch event.keyCode {
-            case 123: // left arrow
-                NotificationCenter.default.post(name: .moveFocus, object: nil,
-                                                userInfo: ["offset": -1])
-                return nil
-            case 124: // right arrow
-                NotificationCenter.default.post(name: .moveFocus, object: nil,
-                                                userInfo: ["offset": 1])
-                return nil
-            case 126: // up arrow
-                NotificationCenter.default.post(name: .moveFocus, object: nil,
-                                                userInfo: ["offset": -Layout.gridColumns])
-                return nil
-            case 125: // down arrow
-                NotificationCenter.default.post(name: .moveFocus, object: nil,
-                                                userInfo: ["offset": Layout.gridColumns])
-                return nil
-            case 49: // space — select focused butt without closing
-                NotificationCenter.default.post(name: .selectButtFocus, object: nil)
-                return nil
-            case 36: // return
-                self.commitAndClosePopover()
-                return nil
-            default:
-                return event
-            }
-        }
+        keyMonitor = makeKeyMonitor(
+            moveNotification: .moveFocus,
+            columns: Layout.gridColumns,
+            spaceAction: { NotificationCenter.default.post(name: .selectButtFocus, object: nil) },
+            returnAction: { [weak self] in self?.commitAndClosePopover() }
+        )
 
         guard let button = statusItem.button else { return }
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
@@ -398,6 +373,46 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         }
     }
 
+    // MARK: - Keyboard Monitor
+
+    // Arrow keys and Return are handled via NSEvent monitor instead of SwiftUI's
+    // .onKeyPress (macOS 14+), so keyboard nav works back to macOS 12.
+    private func makeKeyMonitor(
+        moveNotification: Notification.Name,
+        columns: Int,
+        spaceAction: @escaping () -> Void,
+        returnAction: @escaping () -> Void
+    ) -> Any {
+        NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            switch event.keyCode {
+            case 123: // left
+                NotificationCenter.default.post(name: moveNotification, object: nil,
+                                                userInfo: ["offset": -1])
+                return nil
+            case 124: // right
+                NotificationCenter.default.post(name: moveNotification, object: nil,
+                                                userInfo: ["offset": 1])
+                return nil
+            case 126: // up
+                NotificationCenter.default.post(name: moveNotification, object: nil,
+                                                userInfo: ["offset": -columns])
+                return nil
+            case 125: // down
+                NotificationCenter.default.post(name: moveNotification, object: nil,
+                                                userInfo: ["offset": columns])
+                return nil
+            case 49: // space
+                spaceAction()
+                return nil
+            case 36: // return
+                returnAction()
+                return nil
+            default:
+                return event
+            }
+        }!
+    }
+
     // MARK: - Sound Picker Popover
 
     @objc private func changeSoundMenuAction() {
@@ -427,34 +442,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             self.soundPickerPopover?.performClose(nil)
         }
 
-        keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-            switch event.keyCode {
-            case 49: // space
-                NotificationCenter.default.post(name: .toggleSoundPreview, object: nil)
-                return nil
-            case 123: // left arrow
-                NotificationCenter.default.post(name: .moveSoundFocus, object: nil,
-                                                userInfo: ["offset": -1])
-                return nil
-            case 124: // right arrow
-                NotificationCenter.default.post(name: .moveSoundFocus, object: nil,
-                                                userInfo: ["offset": 1])
-                return nil
-            case 126: // up arrow
-                NotificationCenter.default.post(name: .moveSoundFocus, object: nil,
-                                                userInfo: ["offset": -Layout.soundGridColumns])
-                return nil
-            case 125: // down arrow
-                NotificationCenter.default.post(name: .moveSoundFocus, object: nil,
-                                                userInfo: ["offset": Layout.soundGridColumns])
-                return nil
-            case 36: // return
-                NotificationCenter.default.post(name: .confirmAndCloseSound, object: nil)
-                return nil
-            default:
-                return event
-            }
-        }
+        keyMonitor = makeKeyMonitor(
+            moveNotification: .moveSoundFocus,
+            columns: Layout.soundGridColumns,
+            spaceAction: { NotificationCenter.default.post(name: .toggleSoundPreview, object: nil) },
+            returnAction: { NotificationCenter.default.post(name: .confirmAndCloseSound, object: nil) }
+        )
 
         guard let button = statusItem.button else { return }
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)

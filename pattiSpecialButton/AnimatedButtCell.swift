@@ -4,15 +4,15 @@ struct AnimatedButtCell: View {
     let butt: ButtInfo
     let isSelected: Bool
     var isFocused: Bool = false
-    let displayMode: String
+    let displayMode: DisplayMode
     let onTap: () -> Void
 
-    private var isTemplate: Bool { displayMode != DisplayMode.original.rawValue }
+    private var isTemplate: Bool { displayMode != .original }
 
     @StateObject private var animator: FrameAnimator
 
     init(butt: ButtInfo, isSelected: Bool, isFocused: Bool = false,
-         displayMode: String = DisplayMode.stencil.rawValue,
+         displayMode: DisplayMode = .stencil,
          onTap: @escaping () -> Void) {
         self.butt = butt
         self.isSelected = isSelected
@@ -39,7 +39,7 @@ struct AnimatedButtCell: View {
             }
             .frame(width: Layout.cellImageSize, height: Layout.cellImageSize)
             .background(
-                displayMode == DisplayMode.original.rawValue
+                displayMode == .original
                     ? RoundedRectangle(cornerRadius: 4).fill(Color.white)
                     : RoundedRectangle(cornerRadius: 4).fill(Color.clear)
             )

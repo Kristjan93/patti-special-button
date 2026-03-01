@@ -24,7 +24,7 @@ enum TouchBarParade {
         guard let vc = popover.contentViewController,
               let window = vc.view.window else { return }
 
-        let manifest = loadButtManifest()
+        let manifest = buttManifest
         guard !manifest.isEmpty else { return }
 
         let modeRaw = UserDefaults.standard.string(forKey: Defaults.displayModeKey)

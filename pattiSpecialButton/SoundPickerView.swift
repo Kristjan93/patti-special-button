@@ -10,7 +10,7 @@ struct SoundPickerView: View {
     @State private var progressTimer: Timer?
     @State private var activeSegmentWaveform: [Float]?
 
-    private let allSounds: [SoundInfo] = loadSoundManifest()
+    private let allSounds: [SoundInfo] = soundManifest
     private let columns = Array(
         repeating: GridItem(.flexible(), spacing: Layout.gridSpacing),
         count: Layout.soundGridColumns
