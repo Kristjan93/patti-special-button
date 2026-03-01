@@ -4,11 +4,11 @@ import SwiftUI
 struct SoundPickerView: View {
     @AppStorage(Defaults.selectedSoundIdKey) private var selectedSoundId = Defaults.defaultSoundId
     @State private var focusedIndex: Int = 0
-    @State private var sampleCache: [String: [Float]] = [:]
     @State private var playingId: String?
     @State private var playbackProgress: Double = 0
     @State private var previewPlayer: AVAudioPlayer?
     @State private var progressTimer: Timer?
+    @State private var activeSegmentWaveform: [Float]?
 
     private let allSounds: [SoundInfo] = loadSoundManifest()
     private let columns = Array(
@@ -53,7 +53,6 @@ struct SoundPickerView: View {
                     selectSound(sounds[focusedIndex].id)
                 }
                 .onAppear {
-                    loadSamples()
                     let sounds = flatSounds
                     if let index = sounds.firstIndex(where: { $0.id == selectedSoundId }) {
                         focusedIndex = index
@@ -85,7 +84,9 @@ struct SoundPickerView: View {
                             sound: sound,
                             isSelected: sound.id == selectedSoundId,
                             isFocused: flatIndex == focusedIndex,
-                            samples: sampleCache[sound.id] ?? [],
+                            samples: (sound.id == playingId && sound.isShuffle)
+                                ? (activeSegmentWaveform ?? sound.waveform ?? [])
+                                : (sound.waveform ?? []),
                             isPlaying: sound.id == playingId,
                             progress: sound.id == playingId ? playbackProgress : 0,
                             onTap: {
@@ -178,7 +179,16 @@ struct SoundPickerView: View {
 
         stopPreview()
 
-        guard let url = sound.bundleURL else { return }
+        let url: URL?
+        if sound.isShuffle, let segments = sound.segments {
+            let segment = segments.randomElement()
+            url = segment?.bundleURL
+            activeSegmentWaveform = segment?.waveform
+        } else {
+            url = sound.bundleURL
+            activeSegmentWaveform = nil
+        }
+        guard let url else { return }
         do {
             let player = try AVAudioPlayer(contentsOf: url)
             player.numberOfLoops = 0
@@ -206,14 +216,7 @@ struct SoundPickerView: View {
         previewPlayer = nil
         playingId = nil
         playbackProgress = 0
+        activeSegmentWaveform = nil
     }
 
-    // MARK: - Waveform Sampling
-
-    private func loadSamples() {
-        for sound in allSounds {
-            guard sampleCache[sound.id] == nil, let url = sound.bundleURL else { continue }
-            sampleCache[sound.id] = WaveformSampler.sampleAudio(url: url)
-        }
-    }
 }

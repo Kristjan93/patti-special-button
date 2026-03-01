@@ -7,7 +7,7 @@ enum Defaults {
 
     static let defaultButtId = "asynchronous-butt"
     static let defaultIconSize = "fun-size"
-    static let defaultDisplayMode = "stencil"
+    static let defaultDisplayMode = "outline"
 
     static let selectedSoundIdKey = "selectedSoundId"
     static let defaultSoundId = "perfect-fart"

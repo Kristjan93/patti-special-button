@@ -1,4 +1,3 @@
-import AVFoundation
 import SwiftUI
 
 struct WaveformView: View {
@@ -33,50 +32,5 @@ struct WaveformView: View {
             }
             .frame(maxHeight: .infinity, alignment: .center)
         }
-    }
-}
-
-// MARK: - Audio Sampling
-
-enum WaveformSampler {
-    static func sampleAudio(url: URL, barCount: Int = Layout.waveformBarCount) -> [Float] {
-        guard let audioFile = try? AVAudioFile(forReading: url) else { return [] }
-
-        let format = audioFile.processingFormat
-        let frameCount = AVAudioFrameCount(audioFile.length)
-        guard frameCount > 0,
-              let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCount)
-        else { return [] }
-
-        do {
-            try audioFile.read(into: buffer)
-        } catch {
-            return []
-        }
-
-        guard let channelData = buffer.floatChannelData?[0] else { return [] }
-        let totalSamples = Int(buffer.frameLength)
-        let samplesPerBar = totalSamples / barCount
-
-        guard samplesPerBar > 0 else { return [] }
-
-        var amplitudes: [Float] = []
-        for bar in 0..<barCount {
-            let start = bar * samplesPerBar
-            let end = min(start + samplesPerBar, totalSamples)
-            var sum: Float = 0
-            for i in start..<end {
-                sum += abs(channelData[i])
-            }
-            amplitudes.append(sum / Float(end - start))
-        }
-
-        // Normalize to 0-1 range
-        let maxAmp = amplitudes.max() ?? 1
-        if maxAmp > 0 {
-            amplitudes = amplitudes.map { $0 / maxAmp }
-        }
-
-        return amplitudes
     }
 }

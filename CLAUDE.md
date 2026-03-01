@@ -29,10 +29,10 @@ Hybrid SwiftUI + AppKit. SwiftUI provides the `@main` app lifecycle, but all men
 - `AnimatedButtCell.swift` — SwiftUI cell for a single butt in the picker grid. Shows animated preview via `FrameAnimator`, checkmark badge for selected butt, blue highlight for keyboard focus.
 - `FrameAnimator.swift` — `ObservableObject` that loads RGBA PNG frames and per-frame timing from a `ButtInfo`, animates via `DispatchSourceTimer` with per-frame rescheduling. Takes a `displayMode` parameter for frame processing (Stencil flips alpha to create the cutout effect). Shared by both `AppDelegate` (menu bar, via Combine subscription to `$currentFrameIndex`) and picker cells (SwiftUI, via `@Published currentFrame`).
 - `ButtInfo.swift` — Struct decoded from `manifest.json` with id, name, frameCount, frameDelays.
-- `SoundInfo.swift` — Struct decoded from `sounds-manifest.json` with id, name, category, file, ext. Computed `bundleURL` and `displayFilename` properties.
-- `SoundPickerView.swift` — SwiftUI view for the sound picker grid. 2-column `LazyVGrid` with categorized sections (case-insensitive grouping), `AVAudioPlayer` preview playback with `Timer`-based scrubber progress, waveform sample caching. Keyboard hints footer overlay.
-- `SoundCell.swift` — SwiftUI cell for a single sound in the picker grid. Shows waveform bars via `WaveformView`, play/stop button, display name, filename, checkmark badge for selected, blue focus ring.
-- `WaveformView.swift` — SwiftUI view that draws amplitude bars with playback scrubber. Bars change from gray to accent color as playhead passes. Includes `WaveformSampler` that reads audio via `AVAudioFile` + `AVAudioPCMBuffer` and downsamples to bar amplitudes.
+- `SoundInfo.swift` — `SoundInfo` struct decoded from `sounds-manifest.json` with id, name, category, file, ext, shuffle, source, waveform, segments. `SoundSegment` struct with file, ext, and optional per-segment `waveform` data. Computed `isShuffle`, `bundleURL`, `displayFilename` properties.
+- `SoundPickerView.swift` — SwiftUI view for the sound picker grid. 2-column `LazyVGrid` with categorized sections (case-insensitive grouping), `AVAudioPlayer` preview playback with `Timer`-based scrubber progress. For shuffle sounds, picks a random segment on preview and swaps the displayed waveform to the segment's pre-computed data; reverts to the composite waveform when stopped. Keyboard hints footer overlay.
+- `SoundCell.swift` — SwiftUI cell for a single sound in the picker grid. Shows waveform bars via `WaveformView`, display name, filename, checkmark badge for selected, blue focus ring. Shuffle sounds show a pill badge (`shuffle` icon + clip count) and `MarqueeText` for the long source filename.
+- `WaveformView.swift` — SwiftUI view that draws amplitude bars from pre-computed sample data with playback scrubber overlay. Bars change from gray to accent color as playhead passes.
 - `Constants.swift` — Central file for all shared constants: `Defaults` (UserDefaults keys and default values including `selectedSoundIdKey`), `DisplayMode` enum, `IconSize` enum (with `.points` and `.label`), `Assets` (bundle resource names including `soundsDir`), `Layout` (popover sizes, grid dimensions, cell sizes, timing, waveform bar count).
 
 ### Why StatusItemMouseView exists
@@ -81,6 +81,16 @@ Sound selection is stored in `UserDefaults` via `Defaults.selectedSoundIdKey`. `
 
 Supported formats: WAV and MP3. FLAC is not supported by AVAudioPlayer on macOS.
 
+### Shuffle sounds
+
+Some sound files contain multiple distinct events (e.g. several farts in one recording). These are split into individual segment files at build time by `scripts/sound-check.py`. The app plays segments in a round-robin shuffle order — all segments heard once before any repeat. State is in-memory only, resets on app relaunch or sound switch.
+
+Shuffle sounds have no top-level `file`/`ext` — instead they have `"shuffle": true`, a `source` field (original filename for display), a composite `waveform` (from the full source), and a `segments` array. Each segment has its own `file`, `ext`, and per-segment `waveform` data.
+
+**Preview behavior**: Space in the sound picker plays a random segment. The waveform display swaps from the composite shape to the playing segment's individual waveform, then reverts to composite when stopped.
+
+**Picker UI**: Shuffle sounds show a pill badge (shuffle icon + clip count) and `MarqueeText` for the long source filename instead of a static truncated label.
+
 ### How the sound picker popover works
 
 Same lifecycle pattern as the icon picker. `showSoundPicker()` creates an `NSPopover` with `.transient` behavior hosting `SoundPickerView`. Keyboard handling via `NSEvent.addLocalMonitorForEvents` (macOS 12 compatible, no SwiftUI `.onKeyPress`):
@@ -88,7 +98,7 @@ Same lifecycle pattern as the icon picker. `showSoundPicker()` creates an `NSPop
 - Space (keyCode 49) → `.toggleSoundPreview` notification
 - Return → `.confirmAndCloseSound` notification (selects + closes)
 
-`SoundPickerView` manages preview playback internally: `AVAudioPlayer` for audio, `Timer` polling `currentTime/duration` for waveform scrubber progress. One sound at a time — starting a new preview stops the previous. Waveform samples are computed once on appear via `WaveformSampler` (reads `AVAudioFile` + `AVAudioPCMBuffer`, downsamples to ~25 amplitude bars) and cached in `@State`.
+`SoundPickerView` manages preview playback internally: `AVAudioPlayer` for audio, `Timer` polling `currentTime/duration` for waveform scrubber progress. One sound at a time — starting a new preview stops the previous. Waveform data is pre-computed by the Python pipeline and stored in the manifest (25 amplitude bars per sound and per segment).
 
 ### Adding a new sound
 
@@ -97,6 +107,14 @@ Same lifecycle pattern as the icon picker. `showSoundPicker()` creates an `NSPop
 3. Edit `sounds/sounds-manifest.json` to set the display name and category
 4. Build in Xcode — the folder reference picks up changes automatically
 
+### Adding a shuffle sound
+
+1. Rename the audio file with a `shuffle_` prefix: `shuffle_my-sound.wav`
+2. Drop it into `sounds/`
+3. Run `cd scripts && uv run sound-check.py` — splits into segments, computes waveforms, moves original to `scripts/shuffle-sources/`
+4. Edit `sounds/sounds-manifest.json` to set the display name and category
+5. Build in Xcode
+
 ### Future: User-uploaded sounds
 
 Planned two-manifest approach: bundled manifest (read-only in app bundle) + user manifest (writable in `~/Library/Application Support/com.pattiVoice.pattiSpecialButton/`). The app would merge both at load time. No extra sandbox entitlements needed — Application Support is writable by default. Not yet implemented.
@@ -104,10 +122,13 @@ Planned two-manifest approach: bundled manifest (read-only in app bundle) + user
 ## Assets
 
 - `ButtFrames/` — Xcode folder reference (added to project outside the auto-synced source group to preserve directory hierarchy in the bundle). Contains 47 butt subfolders, each with numbered RGBA 160x160 PNG frames (black outlines with alpha-based transparency), plus a `manifest.json` with per-butt metadata including `frameDelays`. Generated by `scripts/brazilian-butt-lift.py`.
-- `sounds/` — Xcode folder reference containing sound files (WAV/MP3) and `sounds-manifest.json`. Copied as-is into the bundle. Manifest is a plain JSON array of `SoundInfo` entries with id, name, category, file, ext.
+- `sounds/` — Xcode folder reference containing sound files (WAV/MP3), shuffle segment files (`shuffle_*_NN.wav`), and `sounds-manifest.json`. Copied as-is into the bundle. Manifest is a JSON array of `SoundInfo` entries; regular sounds have `file`/`ext`, shuffle sounds have `segments` with per-segment waveforms.
 - `scripts/fractured-but-whole/` — Source animated GIFs (512x512, black line art on white, by Pablo Stanley).
+- `scripts/shuffle-sources/` — Original shuffle source files (before splitting). Preserved for re-running the pipeline.
 - `scripts/brazilian-butt-lift.py` — Python script (Pillow) that extracts GIF frames and per-frame delays, converts to RGBA (black outlines, alpha-based transparency), resizes to 160x160, and outputs into `ButtFrames/`. The 160px frames serve both the menu bar (downscaled to icon size setting) and the picker grid (displayed at 80pt @2x). See `scripts/README.md` for setup and usage.
-- `scripts/sound-check.py` — Python script that scans `sounds/`, converts unsupported formats (FLAC, OGG, WMA, OPUS) to WAV via ffmpeg, and generates/updates `sounds-manifest.json`. Preserves existing entries — only adds new files with `"uncategorized"` default. Supports `--dry-run`.
+- `scripts/sound-check.py` — Python script that scans `sounds/`, converts unsupported formats (FLAC, OGG, WMA, OPUS) to WAV via ffmpeg, splits `shuffle_*` files into segments, computes waveform data (composite + per-segment), and generates/updates `sounds-manifest.json`. Preserves existing entries — only adds new files with `"uncategorized"` default. Supports `--dry-run`.
+- `scripts/shuffle_segments.py` — Silence detection and splitting module (pydub). Splits audio at silence boundaries into numbered segment WAV files.
+- `scripts/waveform_samples.py` — Waveform amplitude computation module. Reads audio and computes 25 normalized amplitude floats (0.0–1.0) for manifest embedding.
 
 ### Adding a new butt
 
@@ -137,16 +158,20 @@ pattiSpecialButton/
     ...47 folders, 458 frames total
   sounds/                          <- Xcode folder reference, copied as-is to bundle
     sounds-manifest.json
-    556505__jixolros__small-realpoots105-110.wav
     dry-fart.mp3
-    ...12 sound files (WAV + MP3)
+    shuffle_204805__ezcah__spanking_00.wav ... _05.wav  <- shuffle segments
+    shuffle_556505__jixolros__small-realpoots105-110_00.wav ... _04.wav
+    ...12 sounds (10 regular + 2 shuffle with 11 segments)
   scripts/                         <- asset pipeline
     brazilian-butt-lift.py         <- butt frame extractor
     sound-check.py                 <- sound asset manager
+    shuffle_segments.py            <- silence-based audio splitting
+    waveform_samples.py            <- waveform amplitude computation
     pyproject.toml
     .python-version (3.12)
     fractured-but-whole/           <- source GIFs
       Alien-Butt.gif ... vampire-butt.gif
+    shuffle-sources/               <- original shuffle files (before splitting)
   pattiSpecialButton/              <- app source (Xcode auto-synced)
     AppDelegate.swift
     pattiSpecialButtonApp.swift

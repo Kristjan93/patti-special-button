@@ -35,6 +35,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     private var buttLookup: [String: ButtInfo] = [:]
     private var soundLookup: [String: SoundInfo] = [:]
 
+    private var shuffleQueue: [Int] = []
+    private var shuffleIndex: Int = 0
+    private var lastShuffleSoundId: String?
+
     private var currentButtId: String {
         UserDefaults.standard.string(forKey: Defaults.selectedButtIdKey) ?? Defaults.defaultButtId
     }
@@ -125,6 +129,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     }
 
     private func commitAndClosePopover() {
+        // Arrow-key preview updates the menu bar without writing to UserDefaults.
+        // Persist the previewed butt so it becomes the real selection.
+        if let previewedId = lastLoadedButtId {
+            UserDefaults.standard.set(previewedId, forKey: Defaults.selectedButtIdKey)
+        }
         committedButtId = currentButtId
         iconPickerPopover?.performClose(nil)
     }
@@ -148,9 +157,23 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     // MARK: - Sound Playback
 
     private func playSound() {
-        guard let sound = soundLookup[currentSoundId],
-              let url = sound.bundleURL else { return }
+        guard let sound = soundLookup[currentSoundId] else { return }
 
+        let url: URL?
+        if sound.isShuffle, let segments = sound.segments, !segments.isEmpty {
+            // Reset queue on sound switch or when exhausted
+            if lastShuffleSoundId != sound.id || shuffleIndex >= shuffleQueue.count {
+                shuffleQueue = reshuffledQueue(count: segments.count)
+                shuffleIndex = 0
+                lastShuffleSoundId = sound.id
+            }
+            url = segments[shuffleQueue[shuffleIndex]].bundleURL
+            shuffleIndex += 1
+        } else {
+            url = sound.bundleURL
+        }
+
+        guard let url else { return }
         do {
             audioPlayer = try AVAudioPlayer(contentsOf: url)
             audioPlayer?.numberOfLoops = 0
@@ -158,6 +181,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         } catch {
             return
         }
+    }
+
+    private func reshuffledQueue(count: Int) -> [Int] {
+        var indices = Array(0..<count)
+        indices.shuffle()
+        return indices
     }
 
     // MARK: - Context Menu
@@ -191,7 +220,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         let displaySubmenu = NSMenu()
         let currentMode = currentDisplayMode
 
-        for (mode, label) in [(DisplayMode.stencil, "Stencil"), (.outline, "Outline")] {
+        for (mode, label) in [(DisplayMode.outline, "Outline"), (.stencil, "Stencil")] {
             let item = NSMenuItem(title: label, action: #selector(selectDisplayMode(_:)), keyEquivalent: "")
             item.target = self
             item.representedObject = mode.rawValue
@@ -359,7 +388,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     @objc private func changeSoundMenuAction() {
         showSoundPicker()
     }
-
+    
     private func showSoundPicker() {
         if let popover = soundPickerPopover, popover.isShown {
             popover.performClose(nil)

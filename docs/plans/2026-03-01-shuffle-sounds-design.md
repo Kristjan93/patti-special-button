@@ -55,7 +55,7 @@ Regular sound gains `waveform`:
 }
 ```
 
-Shuffle sound has `shuffle`, `segments`, `waveform` (no top-level `file`/`ext`):
+Shuffle sound has `shuffle`, `source`, `segments`, `waveform` (no top-level `file`/`ext`):
 
 ```json
 {
@@ -63,14 +63,17 @@ Shuffle sound has `shuffle`, `segments`, `waveform` (no top-level `file`/`ext`):
   "name": "Spanking",
   "category": "novelty",
   "shuffle": true,
-  "waveform": [0.34, 0.67, 0.91, 0.45, 0.23, 0.78, 0.56, 0.12, 0.89, 0.34, 0.67, 0.91, 0.45, 0.23, 0.78, 0.56, 0.12, 0.89, 0.34, 0.67, 0.91, 0.45, 0.23, 0.78, 0.56],
+  "source": "204805__ezcah__spanking.wav",
+  "waveform": [0.34, 0.67, 0.91, ...],
   "segments": [
-    {"file": "shuffle_spanking_01", "ext": "wav"},
-    {"file": "shuffle_spanking_02", "ext": "wav"},
-    {"file": "shuffle_spanking_03", "ext": "wav"}
+    {"file": "shuffle_spanking_01", "ext": "wav", "waveform": [0.12, 0.45, ...]},
+    {"file": "shuffle_spanking_02", "ext": "wav", "waveform": [0.78, 0.23, ...]},
+    {"file": "shuffle_spanking_03", "ext": "wav", "waveform": [0.56, 0.89, ...]}
   ]
 }
 ```
+
+The `source` field preserves the original filename for display (used by `displayFilename`). Each segment has its own `waveform` array (25 bars) computed by the Python pipeline, enabling the picker to show segment-specific waveform shapes during preview.
 
 ### Runtime (Swift)
 
@@ -152,20 +155,9 @@ private func reshuffleQueue(count: Int) {
 
 **`WaveformView.swift`** — Delete `WaveformSampler` enum entirely. `WaveformView` struct unchanged (already takes `[Float]`).
 
-**`SoundPickerView.swift`** — Use `sound.waveform ?? []` instead of `WaveformSampler.sampleAudio(url:)`. For shuffle sound preview, pick a random segment's `bundleURL`.
+**`SoundPickerView.swift`** — Uses `sound.waveform ?? []` for display. For shuffle sound preview, picks a random segment and stores its `waveform` in `activeSegmentWaveform` state. While playing, the cell's `samples:` parameter swaps to the segment waveform; on stop, reverts to composite.
 
-**`SoundCell.swift`** — Add shuffle badge overlay:
-
-```swift
-.overlay(alignment: .bottomLeading) {
-    if sound.isShuffle {
-        Image(systemName: "shuffle")
-            .font(.system(size: 10, weight: .bold))
-            .foregroundStyle(.secondary)
-            .padding(4)
-    }
-}
-```
+**`SoundCell.swift`** — Shuffle sounds show a pill badge (shuffle icon + clip count) and `MarqueeText` for the long source filename (music-app-style scrolling when it overflows). Regular sounds show a static truncated filename.
 
 ### File Renaming
 
@@ -183,6 +175,16 @@ After `sound-check.py` runs, the originals move to `scripts/shuffle-sources/` an
 - **Round-robin shuffle**: All segments shuffled into random order. Each click plays the next. Once all segments played, reshuffle and start over.
 - **State is in-memory only**: Resets on app relaunch or sound switch.
 - **Preview in picker**: Space plays a random segment (not the full original).
+
+### Per-Segment Waveforms
+
+Each segment has its own pre-computed waveform (25 amplitude bars), stored in the manifest alongside the composite waveform. During preview playback in the sound picker:
+
+1. `togglePreview` picks a random segment and stores its `waveform` in `@State activeSegmentWaveform`
+2. The `SoundCell` `samples:` parameter checks `(sound.id == playingId && sound.isShuffle)` — if true, uses `activeSegmentWaveform ?? sound.waveform ?? []`; otherwise uses `sound.waveform ?? []`
+3. `stopPreview` clears `activeSegmentWaveform`, reverting the display to the composite waveform
+
+This makes the waveform visibly change shape each time a different segment plays, giving visual feedback that shuffle is working.
 
 ### Sounds Affected
 
