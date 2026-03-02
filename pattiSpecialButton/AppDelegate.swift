@@ -27,6 +27,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     private var animatorSubscription: AnyCancellable?
 
     private var audioPlayer: AVAudioPlayer?
+    private var pressResetWork: DispatchWorkItem?
 
     private var defaultsObservation: NSObjectProtocol?
     private var iconPickerPopover: NSPopover?
@@ -162,6 +163,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     // MARK: - Sound Playback
 
     private func playSound() {
+        triggerHighlight()
+
         guard let sound = soundLookup[currentSoundId] else { return }
 
         let url: URL?
@@ -186,6 +189,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         } catch {
             return
         }
+    }
+
+    private func triggerHighlight() {
+        pressResetWork?.cancel()
+        statusItem.button?.isHighlighted = true
+
+        let resetWork = DispatchWorkItem { [weak self] in
+            self?.statusItem.button?.isHighlighted = false
+        }
+        pressResetWork = resetWork
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15, execute: resetWork)
     }
 
     private func reshuffledQueue(count: Int) -> [Int] {
