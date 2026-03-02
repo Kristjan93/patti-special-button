@@ -135,42 +135,51 @@ The built `.app` lands in `DerivedData` (Xcode's build cache), or in `build/` if
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-## Versioning
+## Releasing a Feature
 
-Two version numbers, both set in **Xcode → target → General tab** (top of the page):
+Say you just added a new sound. Here's everything you do, start to finish.
 
-| Field | What it is | Example | Rule |
-|-------|-----------|---------|------|
-| **Version** (`MARKETING_VERSION`) | What users see: "Version 1.1" | `1.0`, `1.1`, `2.0` | Follows semver, bump for each release |
-| **Build** (`CURRENT_PROJECT_VERSION`) | Internal build number | `1`, `2`, `3` | Monotonically increasing integer, bump every release |
-
-Sparkle uses **Build** to decide if an update is newer (numeric comparison). **Version** is what the user sees in the update dialog.
-
-**Where to change them**: Xcode → click `pattiSpecialButton` target in the sidebar → General tab → Identity section → "Version" and "Build" fields. Change both before each release.
-
-## Releasing an Update
-
-### The automated way (one command)
+### 1. Write your code and test it
 
 ```bash
-# Bump Version and Build in Xcode first, then:
+# Make your changes, test in Xcode with Cmd+R, iterate until happy
+git add pattiSpecialButton/AppDelegate.swift sounds/new-fart.wav
+git commit -m "Add new fart sound"
+# Keep committing as you work — this is normal development
+```
+
+### 2. Bump the version numbers
+
+When you're ready to ship, open Xcode:
+
+1. Click the **pattiSpecialButton** target in the sidebar (blue app icon)
+2. **General** tab → **Identity** section
+3. Two fields to change:
+
+| Field | What to change | Example |
+|-------|---------------|---------|
+| **Version** | Your release number. Pick the next one. | `1.0` → `1.1` |
+| **Build** | Add 1 to whatever it says. | `1` → `2` |
+
+**Version** is what users see ("You're running version 1.1"). **Build** is an integer that Sparkle uses internally to know "2 is newer than 1". They're independent — when you go from version 1.1 to 2.0, Build just goes from 2 to 3.
+
+### 3. Run the release script
+
+```bash
 ./scripts/release.sh
 ```
 
-This script does everything:
-1. Builds a Universal Binary (arm64 + x86_64) in Release mode
-2. Packages the `.app` into a DMG with drag-to-Applications layout
-3. Signs the DMG with the Sparkle EdDSA key from Keychain
-4. Updates `appcast.xml` with the new version entry
+This does everything: builds a Universal Binary, packages a DMG, signs it with the Sparkle key, updates `appcast.xml`, commits, and tags.
 
-Then follow the printed instructions:
+### 4. Push and upload
+
 ```bash
-git add appcast.xml
-git commit -m "Release v1.1"
-git tag v1.1
 git push origin main --tags
-# Upload the DMG to GitHub Releases (tag v1.1)
 ```
+
+Then upload the DMG file to GitHub Releases (the script tells you the filename and tag).
+
+That's it. Users with the app already installed will get an update prompt on next launch.
 
 Use `--skip-build` to repackage an existing Release build without rebuilding.
 

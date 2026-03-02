@@ -217,20 +217,16 @@ Add comments only where the code's intent isn't obvious from reading it. Each co
 
 ### Versioning
 
-Two fields in Xcode → target → General → Identity:
-- **Version** (`MARKETING_VERSION`): user-facing, e.g. `1.0`, `1.1`. Follows semver.
-- **Build** (`CURRENT_PROJECT_VERSION`): integer, monotonically increasing. Sparkle uses this for update ordering.
-
-Both must be bumped before each release.
+Two fields, both set manually in Xcode (target → General → Identity) before releasing:
+- **Version** (`MARKETING_VERSION`): Dotted string like `1.0`, `1.1`, `2.0`. Shown to users. Two-part only.
+- **Build** (`CURRENT_PROJECT_VERSION`): Integer like `1`, `2`, `3`. Increments by 1 every release. Sparkle uses this to compare updates (`sparkle:version`). Independent of Version — when Version goes from `1.1` to `2.0`, Build just goes from `2` to `3`.
 
 ### Release workflow
 
-`./scripts/release.sh` automates the full pipeline: build → DMG → sign → appcast update.
-
-Steps:
-1. Bump Version and Build in Xcode (target → General → Identity)
-2. Run `./scripts/release.sh`
-3. Commit `appcast.xml`, tag, push, upload DMG to GitHub Releases
+1. Commit your code changes (normal development)
+2. Bump Version and Build in Xcode (target → General → Identity)
+3. `./scripts/release.sh` — builds, packages DMG, signs, updates appcast, commits, tags
+4. `git push origin main --tags` + upload DMG to GitHub Releases
 
 Use `--skip-build` to repackage without rebuilding.
 
