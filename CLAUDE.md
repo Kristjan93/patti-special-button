@@ -10,7 +10,7 @@ The human co-writer on this project should be referred to as **MASTER**. Address
 
 - **Menu bar icon**: An animated butt that wiggles continuously in the macOS menu bar (variable frame count per butt, per-frame timing from source GIFs).
 - **Left-click**: Plays the selected sound once to completion.
-- **Right-click menu**: Shows a context menu with "Change Icon", "Change Sound", "Icon Size" submenu, "Style" submenu, "Credits", "Check for Updates…", and "Quit".
+- **Right-click menu**: Shows a context menu with "Change Icon", "Change Sound", "Icon Size" submenu, "Style" submenu, "Credits", "Check for Updates…", version label, and "Quit".
 - **Icon Size**: Three sizes — Fun Size (20pt), Regular Rump (21pt), Badonkadonk (22pt). Default: Fun Size. Stored in UserDefaults key `Defaults.iconSizeKey`.
 - **Credits**: Opens buttsss.com in the default browser for CC BY 4.0 attribution.
 - **Display Mode**: Three modes — Stencil (inverted alpha + isTemplate=true, filled tinted background with outlines cut out), Original (composited on white + isTemplate=false, black lines on white), Outline (isTemplate=true, floating tinted outlines that adapt to theme). Default: Stencil. Stored in UserDefaults key `Defaults.displayModeKey`. Affects both menu bar and picker grid, except Stencil mode falls back to Original in the picker grid (inverted-alpha rectangles are unreadable at grid size). All modes use the same RGBA PNGs with runtime processing. Menu groups Stencil and Outline under a "Dark / Light" header; Original is separated below.
@@ -252,7 +252,7 @@ The App Sandbox is **off** for now. Sparkle's installer needs to replace the app
 
 | Script | Purpose |
 |--------|---------|
-| `scripts/release.sh` | Full release automation: build → DMG → sign → appcast |
+| `scripts/release.sh` | Full release automation: build → DMG → sign → appcast → commit → tag → push → GitHub Release |
 | `scripts/create-dmg.sh` | DMG packaging with drag-to-Applications layout |
 | `scripts/brazilian-butt-lift.py` | GIF → RGBA PNG frame extraction |
 | `scripts/sound-check.py` | Sound format conversion, splitting, waveform computation |

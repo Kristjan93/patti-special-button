@@ -15,11 +15,13 @@ A **GitHub Release** is extra stuff GitHub attaches to a tag:
 - A title and description (like a blog post)
 - Uploaded files (your DMG)
 
-The DMG is not in the repo. It's hosted on GitHub's servers as an attachment. When the script runs `gh release create v1.1 PattiSpecialButton-v1.1.dmg`, it:
-1. Finds the tag `v1.1` on GitHub
+The DMG is not in the repo. It's hosted on GitHub's servers as an attachment. When the script runs `gh release create v1.4 PattiSpecialButton.dmg`, it:
+1. Finds the tag `v1.4` on GitHub
 2. Creates a Release page for it
 3. Uploads the DMG file to GitHub's file storage
-4. Gives it a download URL like `github.com/.../releases/download/v1.1/PattiSpecialButton-v1.1.dmg`
+4. Gives it a download URL like `github.com/.../releases/download/v1.4/PattiSpecialButton.dmg`
+
+The DMG is always uploaded as `PattiSpecialButton.dmg` (no version in the filename) so the README's direct download link always works.
 
 That URL is what goes into `appcast.xml` so Sparkle knows where to download the update from.
 
