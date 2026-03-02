@@ -203,7 +203,7 @@ echo "═══ Step 4: Updating appcast.xml ═══"
 echo ""
 
 PUB_DATE=$(date -R)
-DOWNLOAD_URL="https://github.com/Kristjan93/patti-special-button/releases/download/v${VERSION}/${DMG_FILENAME}"
+DOWNLOAD_URL="https://github.com/Kristjan93/patti-special-button/releases/download/v${VERSION}/PattiSpecialButton.dmg"
 
 APPCAST_ITEM="    <item>
       <title>Version ${VERSION}</title>
@@ -253,7 +253,7 @@ echo "═══ Step 6: Pushing and uploading to GitHub ═══"
 echo ""
 
 git push origin main --tags
-gh release create "v${VERSION}" "$DMG_PATH" \
+gh release create "v${VERSION}" "${DMG_PATH}#PattiSpecialButton.dmg" \
     --title "v${VERSION}" \
     --notes "Version ${VERSION}"
 
