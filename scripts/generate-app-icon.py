@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 """Generate the macOS app icon for pattiSpecialButton.
 
-Creates a polished squircle icon with a hot pink-to-coral gradient
-background and the asynchronous-butt line art centered on top.
+Creates a bold squircle icon with a solid coral background and white butt
+outlines. High contrast, reads at any size.
 Outputs all 10 required PNG sizes for the Xcode asset catalog.
 
 Usage:
     cd scripts/
-    source .venv/bin/activate
-    python3 generate-app-icon.py
+    uv run generate-app-icon.py
 """
 
 import math
@@ -24,9 +23,8 @@ SQUIRCLE_EXPONENT = 5.0     # Superellipse n — matches Apple's continuous corn
 SUPERSAMPLE = 4             # Anti-aliasing quality multiplier
 BUTT_SCALE = 0.72           # Butt art as fraction of icon body
 
-# Gradient: peach cream -> blush pink (diagonal, top-left to bottom-right)
-COLOR_TOP = (255, 245, 238)     # #FFF5EE — warm peach cream
-COLOR_BOTTOM = (255, 205, 190)  # #FFCDBE — soft blush
+# Solid coral background
+BG_COLOR = (255, 107, 107)      # #FF6B6B — bold coral
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 GIF_PATH = SCRIPT_DIR / "fractured-but-whole" / "Asynchronous-Butt.gif"
@@ -72,19 +70,9 @@ def extract_butt_art(gif_path: Path) -> Image.Image:
     return Image.merge("RGBA", (black, black, black, inverted))
 
 
-def make_gradient(size: int, c1: tuple, c2: tuple) -> Image.Image:
-    """Create a diagonal linear gradient from top-left to bottom-right."""
-    img = Image.new("RGBA", (size, size))
-    pixels = img.load()
-    max_dist = 2.0 * (size - 1)
-    for y in range(size):
-        for x in range(size):
-            t = (x + y) / max_dist
-            r = int(c1[0] + (c2[0] - c1[0]) * t)
-            g = int(c1[1] + (c2[1] - c1[1]) * t)
-            b = int(c1[2] + (c2[2] - c1[2]) * t)
-            pixels[x, y] = (r, g, b, 255)
-    return img
+def make_solid_bg(size: int, color: tuple) -> Image.Image:
+    """Create a solid-color RGBA background."""
+    return Image.new("RGBA", (size, size), (*color, 255))
 
 
 def make_squircle_mask(
@@ -124,22 +112,30 @@ def make_squircle_mask(
 
 
 def build_master_icon(butt_art: Image.Image) -> Image.Image:
-    """Compose the 1024x1024 master icon."""
-    gradient = make_gradient(CANVAS_SIZE, COLOR_TOP, COLOR_BOTTOM)
+    """Compose the 1024x1024 master icon.
+
+    Butt outlines are recolored to white and layered directly on coral.
+    """
+    bg = make_solid_bg(CANVAS_SIZE, BG_COLOR)
     mask = make_squircle_mask(CANVAS_SIZE, ICON_BODY_SIZE, SQUIRCLE_EXPONENT, SUPERSAMPLE)
 
     # Apply squircle mask — transparent outside
-    gradient.putalpha(mask)
+    bg.putalpha(mask)
 
     # Scale butt art to fit within the icon body
     butt_target = int(ICON_BODY_SIZE * BUTT_SCALE)
     butt_scaled = butt_art.resize((butt_target, butt_target), Image.LANCZOS)
 
+    # Recolor outlines from black to white, preserving alpha
+    r, g, b, a = butt_scaled.split()
+    white_channel = Image.new("L", butt_scaled.size, 255)
+    butt_white = Image.merge("RGBA", (white_channel, white_channel, white_channel, a))
+
     # Center on canvas
     offset = (CANVAS_SIZE - butt_target) // 2
 
-    master = gradient.copy()
-    master.paste(butt_scaled, (offset, offset), butt_scaled)
+    master = bg.copy()
+    master.paste(butt_white, (offset, offset), butt_white)
     return master
 
 
@@ -153,8 +149,7 @@ def main():
     print(
         f"  Master: {CANVAS_SIZE}x{CANVAS_SIZE} "
         f"(squircle {ICON_BODY_SIZE}px, butt {butt_target}px, "
-        f"gradient #{COLOR_TOP[0]:02X}{COLOR_TOP[1]:02X}{COLOR_TOP[2]:02X}"
-        f"->#{COLOR_BOTTOM[0]:02X}{COLOR_BOTTOM[1]:02X}{COLOR_BOTTOM[2]:02X})"
+        f"bg #{BG_COLOR[0]:02X}{BG_COLOR[1]:02X}{BG_COLOR[2]:02X})"
     )
 
     master = build_master_icon(butt_art)

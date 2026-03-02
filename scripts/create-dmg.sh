@@ -16,6 +16,8 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 BG_IMAGE="$SCRIPT_DIR/dmg-background.png"
 STAGING_DIR="$SCRIPT_DIR/.dmg-staging"
 
+trap 'rm -rf "$STAGING_DIR"' EXIT
+
 # Find the .app
 if [ $# -ge 1 ]; then
     APP_PATH="$1"
@@ -75,9 +77,6 @@ create-dmg \
     --no-internet-enable \
     "$DMG_OUTPUT" \
     "$STAGING_DIR"
-
-# Clean up staging
-rm -rf "$STAGING_DIR"
 
 echo ""
 echo "DMG created: $DMG_OUTPUT"

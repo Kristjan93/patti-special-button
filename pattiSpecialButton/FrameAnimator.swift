@@ -18,13 +18,10 @@ class FrameAnimator: ObservableObject {
         if let buttDir = Bundle.main.url(
             forResource: buttInfo.id, withExtension: nil, subdirectory: Assets.buttFramesDir
         ) {
-            var i = 0
-            while true {
+            for i in 0..<buttInfo.frameCount {
                 let url = buttDir.appendingPathComponent(String(format: "frame_%02d.png", i))
-                guard FileManager.default.fileExists(atPath: url.path),
-                      let image = NSImage(contentsOf: url) else { break }
+                guard let image = NSImage(contentsOf: url) else { continue }
                 loaded.append(image)
-                i += 1
             }
         }
 

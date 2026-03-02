@@ -18,23 +18,24 @@ enum DisplayMode: String {
 
     func processFrame(_ image: NSImage, size: NSSize) -> NSImage {
         let rect = NSRect(origin: .zero, size: size)
-        let result = NSImage(size: size)
-        result.lockFocus()
-        switch self {
-        case .stencil:
-            NSColor.white.set()
-            rect.fill()
-            image.draw(in: rect, from: .zero, operation: .destinationOut, fraction: 1.0)
-            result.isTemplate = true
-        case .original:
-            NSColor.white.drawSwatch(in: rect)
-            image.draw(in: rect)
-            result.isTemplate = false
-        case .outline:
-            image.draw(in: rect)
-            result.isTemplate = true
+        let result = NSImage(size: size, flipped: false) { _ in
+            switch self {
+            case .stencil:
+                NSColor.white.set()
+                rect.fill()
+                image.draw(in: rect, from: .zero, operation: .destinationOut, fraction: 1.0)
+            case .original:
+                NSColor.white.drawSwatch(in: rect)
+                image.draw(in: rect)
+            case .outline:
+                image.draw(in: rect)
+            }
+            return true
         }
-        result.unlockFocus()
+        switch self {
+        case .stencil, .outline: result.isTemplate = true
+        case .original: result.isTemplate = false
+        }
         return result
     }
 }
@@ -76,7 +77,7 @@ enum Layout {
     static let cellImageSize: CGFloat = 80
     static let cellPadding: CGFloat = 8
     static let cellCornerRadius: CGFloat = 8
-    static let creditsPopoverSize = NSSize(width: 250, height: 200)
+    static let aboutPopoverSize = NSSize(width: 280, height: 260)
 
     static let soundGridColumns = 2
     static let soundPopoverSize = NSSize(width: 420, height: 500)
@@ -87,9 +88,18 @@ enum Layout {
 }
 
 enum Credits {
+    static let githubURL = URL(string: "https://github.com/Kristjan93")!
     static let buttsssURL = URL(string: "https://www.buttsss.com/")!
-    static let freesoundURL = URL(string: "https://freesound.org/people/jixolros/")!
-    static let licenseURL = URL(string: "https://creativecommons.org/licenses/by/4.0/")!
+static let licenseURL = URL(string: "https://creativecommons.org/licenses/by/4.0/")!
+}
+
+enum KeyCode {
+    static let leftArrow:  UInt16 = 123
+    static let rightArrow: UInt16 = 124
+    static let downArrow:  UInt16 = 125
+    static let upArrow:    UInt16 = 126
+    static let space:      UInt16 = 49
+    static let returnKey:  UInt16 = 36
 }
 
 // MARK: - Notification Names

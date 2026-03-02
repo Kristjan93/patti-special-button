@@ -31,7 +31,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     private var defaultsObservation: NSObjectProtocol?
     private var iconPickerPopover: NSPopover?
     private var soundPickerPopover: NSPopover?
-    private var creditsPopover: NSPopover?
+    private var aboutPopover: NSPopover?
     private var committedButtId: String?
     private var committedSoundId: String?
     private var previewObservation: NSObjectProtocol?
@@ -252,9 +252,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 
         menu.addItem(NSMenuItem.separator())
 
-        let creditsItem = NSMenuItem(title: "Credits", action: #selector(creditsMenuAction), keyEquivalent: "")
-        creditsItem.target = self
-        menu.addItem(creditsItem)
+        let aboutItem = NSMenuItem(title: "About", action: #selector(aboutMenuAction), keyEquivalent: "")
+        aboutItem.target = self
+        menu.addItem(aboutItem)
 
         let updateItem = NSMenuItem(
             title: "Check for Updates\u{2026}",
@@ -264,18 +264,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         menu.addItem(updateItem)
 
         menu.addItem(NSMenuItem.separator())
-
-        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
-        let versionItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
-        versionItem.attributedTitle = NSAttributedString(
-            string: "v\(version)",
-            attributes: [
-                .font: NSFont.systemFont(ofSize: 11),
-                .foregroundColor: NSColor.tertiaryLabelColor
-            ]
-        )
-        versionItem.isEnabled = false
-        menu.addItem(versionItem)
 
         menu.addItem(NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
 
@@ -293,17 +281,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         UserDefaults.standard.set(mode, forKey: Defaults.displayModeKey)
     }
 
-    @objc private func creditsMenuAction() {
-        if let popover = creditsPopover, popover.isShown {
+    @objc private func aboutMenuAction() {
+        if let popover = aboutPopover, popover.isShown {
             popover.performClose(nil)
             return
         }
 
         let popover = NSPopover()
-        popover.contentSize = Layout.creditsPopoverSize
+        popover.contentSize = Layout.aboutPopoverSize
         popover.behavior = .transient
         popover.contentViewController = NSHostingController(rootView: CreditsView())
-        creditsPopover = popover
+        aboutPopover = popover
 
         guard let button = statusItem.button else { return }
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
@@ -371,24 +359,23 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             NotificationCenter.default.removeObserver(obs)
             previewObservation = nil
         }
-        // Only revert butt preview when the icon picker closes
-        if notification.object as? NSPopover === iconPickerPopover {
+
+        let closedPopover = notification.object as? NSPopover
+
+        // Revert butt preview when the icon picker closes
+        if closedPopover === iconPickerPopover {
             if let committed = committedButtId, committed != lastLoadedButtId {
                 loadButtById(committed)
                 lastLoadedButtId = committed
                 lastLoadedIconSize = currentIconSize
             }
-        }
-        committedButtId = nil
-        committedSoundId = nil
-
-        // Release the popover and its NSHostingController so SwiftUI tears down
-        // the view tree and FrameAnimator @StateObjects are deallocated.
-        if notification.object as? NSPopover === iconPickerPopover {
             iconPickerPopover = nil
-        } else if notification.object as? NSPopover === soundPickerPopover {
+        } else if closedPopover === soundPickerPopover {
             soundPickerPopover = nil
         }
+
+        committedButtId = nil
+        committedSoundId = nil
     }
 
     // MARK: - Keyboard Monitor
@@ -403,26 +390,26 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     ) -> Any {
         NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             switch event.keyCode {
-            case 123: // left
+            case KeyCode.leftArrow:
                 NotificationCenter.default.post(name: moveNotification, object: nil,
                                                 userInfo: ["offset": -1])
                 return nil
-            case 124: // right
+            case KeyCode.rightArrow:
                 NotificationCenter.default.post(name: moveNotification, object: nil,
                                                 userInfo: ["offset": 1])
                 return nil
-            case 126: // up
+            case KeyCode.upArrow:
                 NotificationCenter.default.post(name: moveNotification, object: nil,
                                                 userInfo: ["offset": -columns])
                 return nil
-            case 125: // down
+            case KeyCode.downArrow:
                 NotificationCenter.default.post(name: moveNotification, object: nil,
                                                 userInfo: ["offset": columns])
                 return nil
-            case 49: // space
+            case KeyCode.space:
                 spaceAction()
                 return nil
-            case 36: // return
+            case KeyCode.returnKey:
                 returnAction()
                 return nil
             default:

@@ -174,11 +174,11 @@ echo ""
 
 SIGN_UPDATE="$(find ~/Library/Developer/Xcode/DerivedData/"${APP_TARGET}"-*/SourcePackages/artifacts/sparkle/Sparkle/bin/sign_update 2>/dev/null | head -1)"
 
-if [ -z "$SIGN_UPDATE" ]; then
-    SIGN_UPDATE="$(find "$BUILD_DIR/SourcePackages/artifacts/sparkle/Sparkle/bin/sign_update" 2>/dev/null | head -1)"
+if [ -z "$SIGN_UPDATE" ] || [ ! -x "$SIGN_UPDATE" ]; then
+    SIGN_UPDATE="$BUILD_DIR/SourcePackages/artifacts/sparkle/Sparkle/bin/sign_update"
 fi
 
-if [ -z "$SIGN_UPDATE" ] || [ ! -x "$SIGN_UPDATE" ]; then
+if [ ! -x "$SIGN_UPDATE" ]; then
     echo "Error: Could not find Sparkle's sign_update tool."
     echo "Build the project in Xcode first so the Sparkle package is resolved."
     exit 1
@@ -205,29 +205,44 @@ echo ""
 PUB_DATE=$(date -R)
 DOWNLOAD_URL="https://github.com/Kristjan93/patti-special-button/releases/download/v${VERSION}/PattiSpecialButton.dmg"
 
-APPCAST_ITEM="    <item>
-      <title>Version ${VERSION}</title>
-      <pubDate>${PUB_DATE}</pubDate>
-      <sparkle:version>${BUILD}</sparkle:version>
-      <sparkle:shortVersionString>${VERSION}</sparkle:shortVersionString>
-      <enclosure
-        url=\"${DOWNLOAD_URL}\"
-        type=\"application/octet-stream\"
-        sparkle:edSignature=\"${ED_SIGNATURE}\"
-        length=\"${FILE_LENGTH}\"
-      />
-    </item>"
-
 APPCAST_FILE="$PROJECT_DIR/appcast.xml"
 
 if [ -f "$APPCAST_FILE" ]; then
     python3 -c "
 import sys
-appcast = open(sys.argv[1]).read()
-item = sys.argv[2]
-appcast = appcast.replace('  </channel>', item + '\n  </channel>')
-open(sys.argv[1], 'w').write(appcast)
-" "$APPCAST_FILE" "$APPCAST_ITEM"
+import xml.etree.ElementTree as ET
+
+appcast_path = sys.argv[1]
+title, pub_date = sys.argv[2], sys.argv[3]
+sparkle_version, short_version = sys.argv[4], sys.argv[5]
+url, signature, length = sys.argv[6], sys.argv[7], sys.argv[8]
+
+NS = 'http://www.andymatuschak.org/xml-namespaces/sparkle'
+ET.register_namespace('sparkle', NS)
+
+tree = ET.parse(appcast_path)
+channel = tree.find('channel')
+
+item = ET.SubElement(channel, 'item')
+ET.SubElement(item, 'title').text = title
+ET.SubElement(item, 'pubDate').text = pub_date
+ET.SubElement(item, '{%s}version' % NS).text = sparkle_version
+ET.SubElement(item, '{%s}shortVersionString' % NS).text = short_version
+enclosure = ET.SubElement(item, 'enclosure')
+enclosure.set('url', url)
+enclosure.set('type', 'application/octet-stream')
+enclosure.set('{%s}edSignature' % NS, signature)
+enclosure.set('length', length)
+
+ET.indent(tree, space='  ', level=0)
+tree.write(appcast_path, xml_declaration=True, encoding='UTF-8')
+# ElementTree writes bytes; append a trailing newline
+with open(appcast_path, 'a') as f:
+    f.write('\n')
+" "$APPCAST_FILE" \
+    "Version ${VERSION}" "$PUB_DATE" \
+    "$BUILD" "$VERSION" \
+    "$DOWNLOAD_URL" "$ED_SIGNATURE" "$FILE_LENGTH"
     echo "Updated appcast.xml."
 else
     echo "Warning: appcast.xml not found at $APPCAST_FILE"

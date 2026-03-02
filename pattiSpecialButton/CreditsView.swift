@@ -1,32 +1,52 @@
 import SwiftUI
 
 struct CreditsView: View {
+    private let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Credits")
+        VStack(spacing: 10) {
+            Image(nsImage: NSApp.applicationIconImage)
+                .resizable()
+                .frame(width: 64, height: 64)
+
+            Text("PattiSpecialButton")
                 .font(.headline)
+            Text("v\(version)")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
 
-            creditEntry("Illustrations by Pablo Stanley", url: Credits.buttsssURL, license: "CC BY 4.0")
-            creditEntry("Sound by jixolros", url: Credits.freesoundURL)
-        }
-        .padding()
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private func creditEntry(_ title: String, url: URL, license: String? = nil) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(title)
             HStack(spacing: 4) {
-                Text(url.host ?? "")
+                Image("GitHubMark")
+                    .resizable()
+                    .frame(width: 14, height: 14)
+                Text("Kristjan93")
                     .underline()
-                    .onTapGesture { NSWorkspace.shared.open(url) }
-                if let license {
-                    Text("·")
-                    Text(license)
-                }
+            }
+            .onHover { inside in
+                if inside { NSCursor.pointingHand.push() } else { NSCursor.pop() }
+            }
+            .onTapGesture { NSWorkspace.shared.open(Credits.githubURL) }
+
+            Divider()
+                .padding(.horizontal)
+
+            VStack(spacing: 2) {
+                link("Illustrations by Pablo Stanley", url: Credits.buttsssURL)
+                link("CC BY 4.0", url: Credits.licenseURL)
             }
             .font(.caption)
             .foregroundStyle(.secondary)
         }
+        .padding()
+        .frame(maxWidth: .infinity)
+    }
+
+    private func link(_ title: String, url: URL) -> some View {
+        Text(title)
+            .underline()
+            .onHover { inside in
+                if inside { NSCursor.pointingHand.push() } else { NSCursor.pop() }
+            }
+            .onTapGesture { NSWorkspace.shared.open(url) }
     }
 }

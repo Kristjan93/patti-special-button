@@ -119,38 +119,12 @@ struct SoundPickerView: View {
     }
 
     private var keyboardHintsBar: some View {
-        HStack(spacing: 14) {
-            keyHint("\u{2190}\u{2192}\u{2191}\u{2193}", "Move")  // ←→↑↓
-            keyHint("Space", "Play")
-            keyHint("\u{21A9}", "Select + Close")                // ↩
-            keyHint("Esc", "Close")
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .frame(maxWidth: .infinity)
-        .background(.regularMaterial)
-    }
-
-    private func keyHint(_ key: String, _ label: String?) -> some View {
-        HStack(spacing: 5) {
-            Text(key)
-                .font(.system(size: 10, weight: .medium))
-                .padding(.horizontal, 5)
-                .padding(.vertical, 2)
-                .background(
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(Color.secondary.opacity(0.15))
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 3)
-                        .stroke(Color.secondary.opacity(0.3), lineWidth: 0.5)
-                )
-            if let label {
-                Text(label)
-                    .font(.system(size: 11))
-                    .foregroundColor(.secondary)
-            }
-        }
+        KeyboardHintsBar(hints: [
+            ("\u{2190}\u{2192}\u{2191}\u{2193}", "Move"),
+            ("Space", "Play"),
+            ("\u{21A9}", "Select + Close"),
+            ("Esc", "Close"),
+        ])
     }
 
     // MARK: - Focus Navigation
@@ -172,7 +146,8 @@ struct SoundPickerView: View {
     // MARK: - Preview Playback
 
     private func togglePreview(_ sound: SoundInfo) {
-        if playingId == sound.id {
+        // Shuffle sounds never pause — space always plays the next segment.
+        if playingId == sound.id, !sound.isShuffle {
             stopPreview()
             return
         }

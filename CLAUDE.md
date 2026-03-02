@@ -87,7 +87,7 @@ Some sound files contain multiple distinct events (e.g. several farts in one rec
 
 Shuffle sounds have no top-level `file`/`ext` — instead they have `"shuffle": true`, a `source` field (original filename for display), a composite `waveform` (from the full source), and a `segments` array. Each segment has its own `file`, `ext`, and per-segment `waveform` data.
 
-**Preview behavior**: Space in the sound picker plays a random segment. The waveform display swaps from the composite shape to the playing segment's individual waveform, then reverts to composite when stopped.
+**Preview behavior**: Space in the sound picker plays a random segment. Each press plays the next segment immediately — shuffle sounds never pause/stop on space, unlike regular sounds which toggle play/stop. The waveform display swaps from the composite shape to the playing segment's individual waveform, then reverts to composite when stopped.
 
 **Picker UI**: Shuffle sounds show a pill badge (shuffle icon + clip count) and `MarqueeText` for the long source filename instead of a static truncated label.
 
@@ -205,6 +205,10 @@ pattiSpecialButton/
 ## Code comments
 
 Add comments only where the code's intent isn't obvious from reading it. Each comment should explain WHY this approach was chosen — not what the code does. Comment on: workarounds, non-obvious constraints, business logic rationale, and decisions where an alternative approach was deliberately rejected. Never restate what the code already says.
+
+## Links
+
+All clickable text (links, attribution, etc.) must show a pointer hand cursor on hover via `.onHover` with `NSCursor.pointingHand.push()` / `NSCursor.pop()`.
 
 ## Build & release
 
