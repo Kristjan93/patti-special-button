@@ -116,6 +116,7 @@ fi
 if [ "$SKIP_BUILD" = false ]; then
     echo "═══ Step 1: Building Universal Binary (Release) ═══"
     echo ""
+    rm -rf "$BUILD_DIR"
     xcodebuild \
         -scheme "$APP_TARGET" \
         -configuration Release \
