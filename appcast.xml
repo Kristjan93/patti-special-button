@@ -28,5 +28,17 @@
         length="5410806"
       />
     </item>
+    <item>
+      <title>Version 1.1</title>
+      <pubDate>Mon, 02 Mar 2026 00:25:21 +0000</pubDate>
+      <sparkle:version>2</sparkle:version>
+      <sparkle:shortVersionString>1.1</sparkle:shortVersionString>
+      <enclosure
+        url="https://github.com/Kristjan93/patti-special-button/releases/download/v1.1/PattiSpecialButton-v1.1.dmg"
+        type="application/octet-stream"
+        sparkle:edSignature="RKdP/2nweIX0WuHO7mAlUN2E2YugrZKTMZPgiNuJ4stoEy3xSW4uuLUDtp1qECZs1pKXXl2eRQd7hiFB6dsNAw=="
+        length="5370413"
+      />
+    </item>
   </channel>
 </rss>
