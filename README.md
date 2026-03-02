@@ -137,51 +137,60 @@ The built `.app` lands in `DerivedData` (Xcode's build cache), or in `build/` if
 
 ## Releasing a Feature
 
-Say you just added a new sound. Here's everything you do, start to finish.
+Example: you just added a new sound. Here's everything from start to finish.
 
 ### 1. Write your code and test it
 
+Work normally. Edit files, test with Cmd+R in Xcode, commit when things work:
+
 ```bash
-# Make your changes, test in Xcode with Cmd+R, iterate until happy
 git add pattiSpecialButton/AppDelegate.swift sounds/new-fart.wav
 git commit -m "Add new fart sound"
-# Keep committing as you work — this is normal development
 ```
 
-### 2. Bump the version numbers
+You can make as many commits as you want. This is just normal development.
 
-When you're ready to ship, open Xcode:
+### 2. Bump the version numbers in Xcode
 
-1. Click the **pattiSpecialButton** target in the sidebar (blue app icon)
-2. **General** tab → **Identity** section
-3. Two fields to change:
+When your feature is done and you want to ship it:
 
-| Field | What to change | Example |
-|-------|---------------|---------|
-| **Version** | Your release number. Pick the next one. | `1.0` → `1.1` |
-| **Build** | Add 1 to whatever it says. | `1` → `2` |
+1. In Xcode, look at the **left sidebar**. You'll see a blue app icon labeled **pattiSpecialButton** — click it
+2. In the middle panel, under **TARGETS**, click **pattiSpecialButton**
+3. You should be on the **General** tab (if not, click it)
+4. Right at the top there's an **Identity** section with two fields:
 
-**Version** is what users see ("You're running version 1.1"). **Build** is an integer that Sparkle uses internally to know "2 is newer than 1". They're independent — when you go from version 1.1 to 2.0, Build just goes from 2 to 3.
+```
+┌─────────────────────────────────────────────┐
+│ Identity                                    │
+│                                             │
+│ Version    [ 1.0 ]  ← change this to 1.1   │
+│ Build      [ 1   ]  ← change this to 2     │
+│                                             │
+└─────────────────────────────────────────────┘
+```
+
+**Version** is what users see in the update dialog ("Version 1.1 is available"). Pick whatever feels right — `1.1`, `1.2`, `2.0`.
+
+**Build** is a counter that goes up by 1 every time you release. Users never see it. Sparkle uses it to decide "is this newer?" If Build says `2` and the user has `1`, Sparkle knows to offer the update.
 
 ### 3. Run the release script
+
+From the project root folder (where the `.xcodeproj` is):
 
 ```bash
 ./scripts/release.sh
 ```
 
-This does everything: builds a Universal Binary, packages a DMG, signs it with the Sparkle key, updates `appcast.xml`, commits, and tags.
+This does everything automatically:
+- Builds the app
+- Packages it into a DMG
+- Signs the DMG
+- Updates `appcast.xml` (the update feed)
+- Commits and tags the release
+- Pushes to GitHub
+- Creates a GitHub Release and uploads the DMG
 
-### 4. Push and upload
-
-```bash
-git push origin main --tags
-```
-
-Then upload the DMG file to GitHub Releases (the script tells you the filename and tag).
-
-That's it. Users with the app already installed will get an update prompt on next launch.
-
-Use `--skip-build` to repackage an existing Release build without rebuilding.
+When it's done, it's done. Users with the app installed will see an update prompt on their next launch.
 
 ### How auto-updates reach users
 
@@ -265,6 +274,7 @@ pattiSpecialButton/
 | uv | `brew install uv` | Python package runner (asset scripts) |
 | ffmpeg | `brew install ffmpeg` | Audio format conversion |
 | create-dmg | `brew install create-dmg` | DMG packaging |
+| gh | `brew install gh` | GitHub Releases upload |
 
 Python dependencies (`scripts/pyproject.toml`): Pillow (image processing), pydub (audio processing).
 

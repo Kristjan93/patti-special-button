@@ -5,11 +5,8 @@
 # How to release:
 #   1. Commit your code changes
 #   2. In Xcode: target → General → Identity → bump Version and Build
-#      Version: 1.0 → 1.1 (what users see)
-#      Build:   1   → 2   (integer for Sparkle)
 #   3. ./scripts/release.sh
-#   4. git push origin main --tags
-#   5. Upload the DMG to GitHub Releases
+#   That's it. The script builds, signs, pushes, and uploads.
 #
 # What it does:
 #   1. Preflight checks (tools, signing key, endpoints)
@@ -18,9 +15,10 @@
 #   4. Signs the DMG with the Sparkle EdDSA key
 #   5. Updates appcast.xml with the signed entry
 #   6. Commits and tags the release
+#   7. Pushes to GitHub and creates a GitHub Release with the DMG
 #
 # Prerequisites:
-#   brew install create-dmg
+#   brew install create-dmg gh
 #   Sparkle signing key in Keychain (account: patti-special-button)
 # ──────────────────────────────────────────────────────────────────────
 
@@ -62,6 +60,13 @@ if ! command -v create-dmg &>/dev/null; then
     PREFLIGHT_OK=false
 else
     echo "  OK    create-dmg"
+fi
+
+if ! command -v gh &>/dev/null; then
+    echo "  FAIL  gh not found. Install with: brew install gh"
+    PREFLIGHT_OK=false
+else
+    echo "  OK    gh"
 fi
 
 if security find-generic-password -a "$SPARKLE_ACCOUNT" -s "https://sparkle-project.org" &>/dev/null 2>&1; then
@@ -240,18 +245,22 @@ git tag "v${VERSION}"
 
 echo ""
 
+# ── Step 6: Push and create GitHub Release ────────────────────────
+
+echo ""
+echo "═══ Step 6: Pushing and uploading to GitHub ═══"
+echo ""
+
+git push origin main --tags
+gh release create "v${VERSION}" "$DMG_PATH" \
+    --title "v${VERSION}" \
+    --notes "Version ${VERSION}"
+
+echo ""
+
 # ── Done ──────────────────────────────────────────────────────────
 
 echo "═══════════════════════════════════════════════════"
-echo "  Release v${VERSION} ready!"
+echo "  Release v${VERSION} is live!"
 echo "═══════════════════════════════════════════════════"
-echo ""
-echo "  DMG:     $DMG_PATH"
-echo "  Size:    $(du -h "$DMG_PATH" | cut -f1)"
-echo "  Commit:  Release v${VERSION}"
-echo "  Tag:     v${VERSION}"
-echo ""
-echo "  Next steps:"
-echo "    1. git push origin main --tags"
-echo "    2. Upload ${DMG_FILENAME} to GitHub Releases (tag v${VERSION})"
 echo ""

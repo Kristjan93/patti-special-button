@@ -225,8 +225,7 @@ Two fields, both set manually in Xcode (target → General → Identity) before 
 
 1. Commit your code changes (normal development)
 2. Bump Version and Build in Xcode (target → General → Identity)
-3. `./scripts/release.sh` — builds, packages DMG, signs, updates appcast, commits, tags
-4. `git push origin main --tags` + upload DMG to GitHub Releases
+3. `./scripts/release.sh` — does everything: build, DMG, sign, appcast, commit, tag, push, GitHub Release upload
 
 Use `--skip-build` to repackage without rebuilding.
 
