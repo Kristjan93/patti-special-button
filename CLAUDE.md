@@ -209,7 +209,7 @@ Add comments only where the code's intent isn't obvious from reading it. Each co
 ## Build & release
 
 - macOS 12.0 deployment target, Swift 5
-- App sandbox enabled with `network.client` entitlement (required for Sparkle update checks)
+- App Sandbox **disabled** (`com.apple.security.app-sandbox` = false). See "Sandbox" section below.
 - Bundle ID: `com.pattiVoice.pattiSpecialButton`
 - Signing: ad-hoc (local/friends distribution). Developer ID + notarization required for public release.
 - Xcode scheme: `pattiSpecialButton` (the only scheme). Debug for development, Release for distribution.
@@ -237,6 +237,12 @@ Use `--skip-build` to repackage without rebuilding.
 - Public key in `pattiSpecialButton/Info.plist` (`SUPublicEDKey`).
 - `SUFeedURL` and `SUPublicEDKey` live in a supplementary `Info.plist` (not `INFOPLIST_KEY_` build settings, which silently drop custom keys).
 - Sign DMGs with: `sign_update MyApp.dmg --account patti-special-button`
+
+### Sandbox
+
+The App Sandbox is **off** for now. Sparkle's installer needs to replace the app bundle on disk, which the sandbox blocks. Sparkle supports sandboxed updates via an XPC installer service, but that requires proper code signing with a Developer ID certificate — not ad-hoc.
+
+**Re-enable the sandbox when**: you get a Developer ID and set up Sparkle's XPC installer (see Sparkle docs on sandboxed apps). Also required for Mac App Store distribution. To re-enable: set `com.apple.security.app-sandbox` to `true` in `pattiSpecialButton.entitlements` and add back `com.apple.security.network.client`.
 
 ### DMG packaging
 
