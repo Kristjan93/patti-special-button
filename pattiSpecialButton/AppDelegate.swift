@@ -196,6 +196,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 
     // MARK: - Context Menu
 
+    // LSUIElement apps aren't active when the menu opens, so Sparkle's
+    // windows appear behind other apps. Activate first.
+    @objc func checkForUpdates() {
+        NSApp.activate(ignoringOtherApps: true)
+        updaterController.checkForUpdates(nil)
+    }
+
     private func showContextMenu() {
         let menu = NSMenu()
         menu.delegate = self
@@ -251,16 +258,22 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 
         let updateItem = NSMenuItem(
             title: "Check for Updates\u{2026}",
-            action: #selector(SPUStandardUpdaterController.checkForUpdates(_:)),
+            action: #selector(checkForUpdates),
             keyEquivalent: ""
         )
-        updateItem.target = updaterController
         menu.addItem(updateItem)
 
         menu.addItem(NSMenuItem.separator())
 
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
-        let versionItem = NSMenuItem(title: "v\(version)", action: nil, keyEquivalent: "")
+        let versionItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
+        versionItem.attributedTitle = NSAttributedString(
+            string: "v\(version)",
+            attributes: [
+                .font: NSFont.systemFont(ofSize: 11),
+                .foregroundColor: NSColor.tertiaryLabelColor
+            ]
+        )
         versionItem.isEnabled = false
         menu.addItem(versionItem)
 
