@@ -253,9 +253,11 @@ echo "═══ Step 6: Pushing and uploading to GitHub ═══"
 echo ""
 
 git push origin main --tags
-gh release create "v${VERSION}" "${DMG_PATH}#PattiSpecialButton.dmg" \
+cp "$DMG_PATH" "$PROJECT_DIR/PattiSpecialButton.dmg"
+gh release create "v${VERSION}" "$DMG_PATH" "$PROJECT_DIR/PattiSpecialButton.dmg" \
     --title "v${VERSION}" \
     --notes "Version ${VERSION}"
+rm "$PROJECT_DIR/PattiSpecialButton.dmg"
 
 echo ""
 
