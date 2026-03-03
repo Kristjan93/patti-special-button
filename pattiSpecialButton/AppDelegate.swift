@@ -33,6 +33,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     private var iconPickerPopover: NSPopover?
     private var soundPickerPopover: NSPopover?
     private var aboutPopover: NSPopover?
+    private var hintPopover: NSPopover?
     private var committedButtId: String?
     private var committedSoundId: String?
     private var previewObservation: NSObjectProtocol?
@@ -70,6 +71,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         soundLookup = Dictionary(uniqueKeysWithValues: soundManifest.map { ($0.id, $0) })
         setupStatusItem()
         loadButt()
+
+        statusItem.button?.toolTip = "Right-click for options"
 
         defaultsObservation = NotificationCenter.default.addObserver(
             forName: UserDefaults.didChangeNotification,
@@ -165,6 +168,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     private func playSound() {
         triggerHighlight()
 
+        let defaults = UserDefaults.standard
+        let clickCount = defaults.integer(forKey: Defaults.leftClickCountKey) + 1
+        defaults.set(clickCount, forKey: Defaults.leftClickCountKey)
+
+        if clickCount == 3 && !defaults.bool(forKey: Defaults.hasRightClickedKey) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+                self?.showHint()
+            }
+        }
+
         guard let sound = soundLookup[currentSoundId] else { return }
 
         let url: URL?
@@ -218,6 +231,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     }
 
     private func showContextMenu() {
+        UserDefaults.standard.set(true, forKey: Defaults.hasRightClickedKey)
+        hintPopover?.performClose(nil)
+
         let menu = NSMenu()
         menu.delegate = self
 
@@ -386,6 +402,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             iconPickerPopover = nil
         } else if closedPopover === soundPickerPopover {
             soundPickerPopover = nil
+        } else if closedPopover === hintPopover {
+            hintPopover = nil
         }
 
         committedButtId = nil
@@ -438,6 +456,26 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         showSoundPicker()
     }
     
+    // MARK: - Sound Picker Popover
+
+    private func showHint() {
+        guard hintPopover == nil else { return }
+
+        let popover = NSPopover()
+        popover.contentSize = Layout.hintPopoverSize
+        popover.behavior = .transient
+        popover.delegate = self
+        popover.contentViewController = NSHostingController(rootView: HintView())
+        hintPopover = popover
+
+        guard let button = statusItem.button else { return }
+        popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) { [weak popover] in
+            popover?.performClose(nil)
+        }
+    }
+
     private func showSoundPicker() {
         if let popover = soundPickerPopover, popover.isShown {
             popover.performClose(nil)
@@ -477,4 +515,19 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         }
     }
 
+}
+
+// MARK: - Hint View
+
+private struct HintView: View {
+    var body: some View {
+        VStack(spacing: 4) {
+            Text("Right-click for options")
+                .font(.system(size: 13, weight: .bold))
+            Text("Change icon, sound, and more")
+                .font(.system(size: 11))
+                .foregroundColor(.secondary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
 }

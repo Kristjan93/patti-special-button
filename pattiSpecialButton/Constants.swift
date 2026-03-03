@@ -11,6 +11,9 @@ enum Defaults {
 
     static let selectedSoundIdKey = "selectedSoundId"
     static let defaultSoundId = "perfect-fart"
+
+    static let leftClickCountKey = "leftClickCount"
+    static let hasRightClickedKey = "hasRightClicked"
 }
 
 enum DisplayMode: String {
@@ -85,6 +88,8 @@ enum Layout {
 
     static let touchBarButtSize: CGFloat = 30
     static let touchBarButtSpacing: CGFloat = 8
+
+    static let hintPopoverSize = NSSize(width: 220, height: 60)
 }
 
 enum Credits {
