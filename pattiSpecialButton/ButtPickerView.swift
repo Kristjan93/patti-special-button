@@ -4,10 +4,15 @@ import Combine
 struct ButtPickerView: View {
     @AppStorage(Defaults.selectedButtIdKey) private var selectedButtId = Defaults.defaultButtId
     @AppStorage(Defaults.displayModeKey) private var displayMode = Defaults.defaultDisplayMode
+    @AppStorage(Defaults.lineWeightKey) private var lineWeight = Defaults.defaultLineWeight
     @State private var focusedIndex: Int = 0
 
     private var parsedDisplayMode: DisplayMode {
         DisplayMode(rawValue: displayMode) ?? .stencil
+    }
+
+    private var parsedLineWeight: LineWeight {
+        LineWeight(rawValue: lineWeight) ?? .regular
     }
 
     private let butts: [ButtInfo] = buttManifest
@@ -27,7 +32,7 @@ struct ButtPickerView: View {
                 .onAppear {
                     if let index = butts.firstIndex(where: { $0.id == selectedButtId }) {
                         focusedIndex = index
-                        proxy.scrollTo("\(butts[index].id)-\(displayMode)")
+                        proxy.scrollTo("\(butts[index].id)-\(displayMode)-\(lineWeight)")
                     }
                 }
         }
@@ -42,12 +47,13 @@ struct ButtPickerView: View {
                     isFocused: index == focusedIndex,
                     // Stencil mode's inverted-alpha rectangles are unreadable at grid size — show Original instead
                     displayMode: parsedDisplayMode == .stencil ? .original : parsedDisplayMode,
+                    lineWeight: parsedLineWeight,
                     onTap: {
                         focusedIndex = index
                         selectedButtId = butt.id
                     }
                 )
-                .id("\(butt.id)-\(displayMode)")
+                .id("\(butt.id)-\(displayMode)-\(lineWeight)")
             }
         }
         .padding(Layout.gridPadding)
@@ -81,7 +87,7 @@ struct ButtPickerView: View {
         let newIndex = focusedIndex + offset
         guard newIndex >= 0 && newIndex < butts.count else { return }
         focusedIndex = newIndex
-        withAnimation { proxy.scrollTo("\(butts[newIndex].id)-\(displayMode)") }
+        withAnimation { proxy.scrollTo("\(butts[newIndex].id)-\(displayMode)-\(lineWeight)") }
         NotificationCenter.default.post(
             name: .previewButt, object: nil,
             userInfo: ["buttId": butts[newIndex].id]

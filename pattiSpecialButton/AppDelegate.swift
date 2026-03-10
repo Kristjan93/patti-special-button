@@ -57,6 +57,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         return DisplayMode(rawValue: raw) ?? .stencil
     }
 
+    private var currentLineWeight: LineWeight {
+        let raw = UserDefaults.standard.string(forKey: Defaults.lineWeightKey) ?? Defaults.defaultLineWeight
+        return LineWeight(rawValue: raw) ?? .regular
+    }
+
     // MARK: - App Lifecycle
 
     private var currentSoundId: String {
@@ -90,13 +95,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     private var lastLoadedButtId: String?
     private var lastLoadedIconSize: CGFloat?
     private var lastLoadedDisplayMode: DisplayMode?
+    private var lastLoadedLineWeight: LineWeight?
 
     private func handleButtChange() {
         let newId = currentButtId
         let newSize = currentIconSize
         let newMode = currentDisplayMode
+        let newWeight = currentLineWeight
         guard newId != lastLoadedButtId || newSize != lastLoadedIconSize
-            || newMode != lastLoadedDisplayMode else { return }
+            || newMode != lastLoadedDisplayMode || newWeight != lastLoadedLineWeight else { return }
         // A UserDefaults write while the popover is open means the user clicked to select.
         // Update committedButtId so popover close doesn't revert this selection.
         if iconPickerPopover?.isShown == true {
@@ -110,6 +117,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         lastLoadedButtId = currentButtId
         lastLoadedIconSize = currentIconSize
         lastLoadedDisplayMode = currentDisplayMode
+        lastLoadedLineWeight = currentLineWeight
     }
 
     private func loadButtById(_ buttId: String) {
@@ -118,7 +126,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         animator?.stop()
 
         let mode = currentDisplayMode
-        let newAnimator = FrameAnimator(buttInfo: buttInfo)
+        let newAnimator = FrameAnimator(buttInfo: buttInfo, lineWeight: currentLineWeight)
         let size = NSSize(width: currentIconSize, height: currentIconSize)
         menuBarFrames = newAnimator.frames.map { mode.processFrame($0, size: size) }
 
@@ -253,6 +261,19 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         displayItem.submenu = displaySubmenu
         menu.addItem(displayItem)
 
+        let weightItem = NSMenuItem(title: "Line Weight", action: nil, keyEquivalent: "")
+        let weightSubmenu = NSMenu()
+        let currentWeight = UserDefaults.standard.string(forKey: Defaults.lineWeightKey) ?? Defaults.defaultLineWeight
+        for weight in [LineWeight.regular, .bold] {
+            let item = NSMenuItem(title: weight.label, action: #selector(selectLineWeight(_:)), keyEquivalent: "")
+            item.target = self
+            item.representedObject = weight.rawValue
+            item.state = weight.rawValue == currentWeight ? .on : .off
+            weightSubmenu.addItem(item)
+        }
+        weightItem.submenu = weightSubmenu
+        menu.addItem(weightItem)
+
         menu.addItem(NSMenuItem.separator())
 
         let aboutItem = NSMenuItem(title: "About", action: #selector(aboutMenuAction), keyEquivalent: "")
@@ -282,6 +303,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     @objc private func selectDisplayMode(_ sender: NSMenuItem) {
         guard let mode = sender.representedObject as? String else { return }
         UserDefaults.standard.set(mode, forKey: Defaults.displayModeKey)
+    }
+
+    @objc private func selectLineWeight(_ sender: NSMenuItem) {
+        guard let weight = sender.representedObject as? String else { return }
+        UserDefaults.standard.set(weight, forKey: Defaults.lineWeightKey)
     }
 
     @objc private func aboutMenuAction() {

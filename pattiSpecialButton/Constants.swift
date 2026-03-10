@@ -9,6 +9,9 @@ enum Defaults {
     static let defaultIconSize = "fun-size"
     static let defaultDisplayMode = "outline"
 
+    static let lineWeightKey = "lineWeight"
+    static let defaultLineWeight = "regular"
+
     static let selectedSoundIdKey = "selectedSoundId"
     static let defaultSoundId = "perfect-fart"
 
@@ -61,6 +64,24 @@ enum IconSize: String {
         case .funSize: return "Fun Size"
         case .regularRump: return "Regular Rump"
         case .badonkadonk: return "Badonkadonk"
+        }
+    }
+}
+
+enum LineWeight: String {
+    case regular, bold
+
+    var label: String {
+        switch self {
+        case .regular: return "Regular"
+        case .bold: return "Bold"
+        }
+    }
+
+    var frameSuffix: String {
+        switch self {
+        case .regular: return ""
+        case .bold: return "_bold"
         }
     }
 }

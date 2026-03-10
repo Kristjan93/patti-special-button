@@ -30,6 +30,9 @@ enum TouchBarParade {
         let modeRaw = UserDefaults.standard.string(forKey: Defaults.displayModeKey)
             ?? Defaults.defaultDisplayMode
         let displayMode = DisplayMode(rawValue: modeRaw) ?? .stencil
+        let weightRaw = UserDefaults.standard.string(forKey: Defaults.lineWeightKey)
+            ?? Defaults.defaultLineWeight
+        let lineWeight = LineWeight(rawValue: weightRaw) ?? .regular
         let size = NSSize(width: Layout.touchBarButtSize, height: Layout.touchBarButtSize)
 
         let selectedId = UserDefaults.standard.string(forKey: Defaults.selectedButtIdKey)
@@ -39,6 +42,7 @@ enum TouchBarParade {
         let holder = ParadeHolder(
             manifest: manifest,
             displayMode: displayMode,
+            lineWeight: lineWeight,
             frameSize: size,
             initialScrollIndex: selectedIndex
         )
@@ -66,6 +70,7 @@ private class ParadeHolder: NSObject, NSTouchBarDelegate, NSScrubberDataSource, 
 
     let manifest: [ButtInfo]
     let displayMode: DisplayMode
+    let lineWeight: LineWeight
     let frameSize: NSSize
     let initialScrollIndex: Int
     var nsTouchBar: NSTouchBar?
@@ -76,9 +81,10 @@ private class ParadeHolder: NSObject, NSTouchBarDelegate, NSScrubberDataSource, 
 
     private static let scrubberItemId = NSUserInterfaceItemIdentifier("buttScrubberItem")
 
-    init(manifest: [ButtInfo], displayMode: DisplayMode, frameSize: NSSize, initialScrollIndex: Int) {
+    init(manifest: [ButtInfo], displayMode: DisplayMode, lineWeight: LineWeight, frameSize: NSSize, initialScrollIndex: Int) {
         self.manifest = manifest
         self.displayMode = displayMode
+        self.lineWeight = lineWeight
         self.frameSize = frameSize
         self.initialScrollIndex = initialScrollIndex
     }
@@ -86,7 +92,7 @@ private class ParadeHolder: NSObject, NSTouchBarDelegate, NSScrubberDataSource, 
     private func ensureLoaded(at index: Int) {
         guard animators[index] == nil else { return }
         let info = manifest[index]
-        let animator = FrameAnimator(buttInfo: info)
+        let animator = FrameAnimator(buttInfo: info, lineWeight: lineWeight)
         let frames = animator.frames.map { displayMode.processFrame($0, size: frameSize) }
         animators[index] = animator
         processedFrames[index] = frames

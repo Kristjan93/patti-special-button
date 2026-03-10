@@ -12,14 +12,15 @@ class FrameAnimator: ObservableObject {
         frames.isEmpty ? nil : frames[currentFrameIndex]
     }
 
-    init(buttInfo: ButtInfo, displayMode: DisplayMode? = nil) {
+    init(buttInfo: ButtInfo, displayMode: DisplayMode? = nil, lineWeight: LineWeight = .regular) {
         var loaded: [NSImage] = []
 
         if let buttDir = Bundle.main.url(
             forResource: buttInfo.id, withExtension: nil, subdirectory: Assets.buttFramesDir
         ) {
             for i in 0..<buttInfo.frameCount {
-                let url = buttDir.appendingPathComponent(String(format: "frame_%02d.png", i))
+                let filename = String(format: "frame_%02d\(lineWeight.frameSuffix).png", i)
+                let url = buttDir.appendingPathComponent(filename)
                 guard let image = NSImage(contentsOf: url) else { continue }
                 loaded.append(image)
             }

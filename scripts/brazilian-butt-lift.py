@@ -21,7 +21,7 @@ import re
 import sys
 from pathlib import Path
 
-from PIL import Image, ImageOps
+from PIL import Image, ImageFilter, ImageOps
 
 # -- Configuration ----------------------------------------------------------
 
@@ -88,17 +88,21 @@ def extract_frames(gif_path: Path) -> tuple[list[Image.Image], list[int]]:
     return frames, delays
 
 
-def process_frame(frame: Image.Image) -> Image.Image:
+def process_frame(frame: Image.Image, bold: bool = False) -> Image.Image:
     """Convert a single RGBA frame to an RGBA outline image.
 
     Pipeline:
       1. Convert to grayscale (luminance)
       2. Resize to 160x160
-      3. Invert grayscale → alpha, RGB = black
+      3. If bold, apply MinFilter(3) to thicken lines (+1px at 160px scale —
+         applied after resize so the thickening survives downscaling to menu bar size)
+      4. Invert grayscale → alpha, RGB = black
          Dark lines become opaque black, white background becomes transparent.
     """
     grayscale = frame.convert("L")
     resized_gray = grayscale.resize(FRAME_SIZE, resample=RESAMPLE)
+    if bold:
+        resized_gray = resized_gray.filter(ImageFilter.MinFilter(size=3))
 
     # Resize before alpha conversion to avoid blending artifacts in Lanczos.
     inverted = ImageOps.invert(resized_gray)
@@ -128,6 +132,8 @@ def process_gif(gif_path: Path) -> dict | None:
     for i, frame in enumerate(frames):
         rgba = process_frame(frame)
         rgba.save(out_dir / f"frame_{i:02d}.png", "PNG")
+        rgba_bold = process_frame(frame, bold=True)
+        rgba_bold.save(out_dir / f"frame_{i:02d}_bold.png", "PNG")
 
     return {"id": slug, "name": name, "frameCount": len(frames), "frameDelays": delays}
 
