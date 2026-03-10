@@ -93,9 +93,11 @@ enum Layout {
 }
 
 enum Credits {
+    // swiftlint:disable force_unwrapping — constant string literals, URL(string:) cannot fail
     static let githubURL = URL(string: "https://github.com/Kristjan93")!
     static let buttsssURL = URL(string: "https://www.buttsss.com/")!
-static let licenseURL = URL(string: "https://creativecommons.org/licenses/by/4.0/")!
+    static let licenseURL = URL(string: "https://creativecommons.org/licenses/by/4.0/")!
+    // swiftlint:enable force_unwrapping
 }
 
 enum KeyCode {

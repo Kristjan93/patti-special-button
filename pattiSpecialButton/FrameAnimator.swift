@@ -40,8 +40,9 @@ class FrameAnimator: ObservableObject {
     }
 
     func stop() {
-        timer?.cancel()
+        let t = timer
         timer = nil
+        t?.cancel()
     }
 
     private func scheduleNext() {
@@ -63,11 +64,14 @@ class FrameAnimator: ObservableObject {
     }
 
     private func advanceFrame() {
+        guard timer != nil else { return }
         currentFrameIndex = (currentFrameIndex + 1) % frames.count
         scheduleNext()
     }
 
     deinit {
-        timer?.cancel()
+        let t = timer
+        timer = nil
+        t?.cancel()
     }
 }
