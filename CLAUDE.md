@@ -23,8 +23,9 @@ The human co-writer on this project should be referred to as **MASTER**. Address
 Hybrid SwiftUI + AppKit. SwiftUI provides the `@main` app lifecycle, but all menu bar logic is in AppKit via `@NSApplicationDelegateAdaptor`.
 
 - `pattiSpecialButtonApp.swift` — App entry point. Wires up AppDelegate, uses `Settings { EmptyView() }` as a no-window scene (SwiftUI requires at least one Scene).
-- `AppDelegate.swift` — Core logic: `NSStatusItem` setup, `AVAudioPlayer` playback (play to completion on click), icon picker and sound picker popover management, butt/size/sound switching via UserDefaults, preview-on-focus lifecycle via NotificationCenter.
+- `AppDelegate.swift` — Core logic: `NSStatusItem` setup, icon picker and sound picker popover management, butt/size/sound switching via UserDefaults, preview-on-focus lifecycle via NotificationCenter. Delegates sound playback to `SoundPlayer`.
 - `StatusItemMouseView` (in AppDelegate.swift) — Transparent `NSView` subclass overlaid on the status bar button. Intercepts `mouseDown`/`rightMouseUp` because `NSStatusBarButton`'s internal tracking loop swallows these events.
+- `SoundPlayer.swift` — `AVAudioPlayer` playback with shuffle state management. Owns `audioPlayer`, shuffle queue/index, and `reshuffledQueue(count:)`. API: `SoundPlayer(soundLookup:)` with `func play(soundId:)`. Zero UI knowledge — AppDelegate handles click counting, hint logic, and highlight animation separately.
 - `ButtPickerView.swift` — SwiftUI view for the icon picker grid. 4-column `LazyVGrid` with arrow key navigation via NSEvent monitor, `ScrollViewReader` for scroll-to-selected, `@AppStorage` for butt selection and display mode. Posts `.previewButt` and `.confirmAndClose` notifications for AppDelegate communication. Passes display mode to each cell.
 - `AnimatedButtCell.swift` — SwiftUI cell for a single butt in the picker grid. Shows animated preview via `FrameAnimator`, checkmark badge for selected butt, blue highlight for keyboard focus. Takes a typed `DisplayMode` enum (not a raw string).
 - `FrameAnimator.swift` — `ObservableObject` that loads RGBA PNG frames and per-frame timing from a `ButtInfo`, animates via `DispatchSourceTimer` with per-frame rescheduling. Takes a `displayMode` parameter for frame processing (Stencil flips alpha to create the cutout effect). Shared by both `AppDelegate` (menu bar, via Combine subscription to `$currentFrameIndex`) and picker cells (SwiftUI, via `@Published currentFrame`).
@@ -32,6 +33,8 @@ Hybrid SwiftUI + AppKit. SwiftUI provides the `@main` app lifecycle, but all men
 - `SoundInfo.swift` — `SoundInfo` struct decoded from `sounds-manifest.json` with id, name, category, file, ext, shuffle, source, waveform, segments. `SoundSegment` struct with file, ext, and optional per-segment `waveform` data. Computed `isShuffle`, `bundleURL`, `displayFilename` properties. Global `soundManifest` constant loads once on first access.
 - `SoundPickerView.swift` — SwiftUI view for the sound picker grid. 2-column `LazyVGrid` with categorized sections (case-insensitive grouping), `AVAudioPlayer` preview playback with `Timer`-based scrubber progress. For shuffle sounds, picks a random segment on preview and swaps the displayed waveform to the segment's pre-computed data; reverts to the composite waveform when stopped. Keyboard hints footer overlay.
 - `SoundCell.swift` — SwiftUI cell for a single sound in the picker grid. Shows waveform bars via `WaveformView`, display name, filename, checkmark badge for selected, blue focus ring. Shuffle sounds show a pill badge (`shuffle` icon + clip count) and `MarqueeText` for the long source filename.
+- `MarqueeText.swift` — Music-app-style scrolling text that loops when content overflows. Used by `SoundCell` for long filenames.
+- `HintView.swift` — SwiftUI view for the right-click discovery hint popover (shown after 3rd left-click if user hasn't right-clicked yet).
 - `WaveformView.swift` — SwiftUI view that draws amplitude bars from pre-computed sample data with playback scrubber overlay. Bars change from gray to accent color as playhead passes.
 - `Constants.swift` — Central file for all shared constants: `Defaults` (UserDefaults keys and default values including `selectedSoundIdKey`), `DisplayMode` enum, `IconSize` enum (with `.points` and `.label`), `Assets` (bundle resource names including `soundsDir`), `Layout` (popover sizes, grid dimensions, cell sizes, timing, waveform bar count).
 
@@ -77,7 +80,7 @@ Selected butt id, icon size, and display mode are stored in `UserDefaults` with 
 
 ## Sound
 
-Sound selection is stored in `UserDefaults` via `Defaults.selectedSoundIdKey`. `AppDelegate` builds a `soundLookup: [String: SoundInfo]` dictionary from the manifest at launch. `playSound()` reads the selected sound id, looks up the `SoundInfo`, and passes `sound.bundleURL` to `AVAudioPlayer`. Playback uses `numberOfLoops = 0` (play once to completion), triggered on mouseDown.
+Sound selection is stored in `UserDefaults` via `Defaults.selectedSoundIdKey`. `AppDelegate` builds a `soundLookup: [String: SoundInfo]` dictionary from the manifest at launch and passes it to `SoundPlayer`. On left-click, `AppDelegate.playSound()` handles UI concerns (highlight animation, click counting, hint logic) then delegates to `soundPlayer.play(soundId:)`. `SoundPlayer` looks up the `SoundInfo`, resolves the URL (including shuffle segment selection), and plays via `AVAudioPlayer` with `numberOfLoops = 0` (play once to completion).
 
 Supported formats: WAV and MP3. FLAC is not supported by AVAudioPlayer on macOS.
 
@@ -180,6 +183,7 @@ pattiSpecialButton/
   pattiSpecialButton/              <- app source (Xcode auto-synced)
     AppDelegate.swift
     pattiSpecialButtonApp.swift
+    SoundPlayer.swift
     ButtPickerView.swift
     AnimatedButtCell.swift
     FrameAnimator.swift
@@ -187,6 +191,8 @@ pattiSpecialButton/
     SoundInfo.swift
     SoundPickerView.swift
     SoundCell.swift
+    MarqueeText.swift
+    HintView.swift
     WaveformView.swift
     Constants.swift
     TouchBarParade.swift

@@ -1,5 +1,4 @@
 import AppKit
-import AVFoundation
 import Combine
 import ServiceManagement
 import Sparkle
@@ -27,8 +26,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     private var menuBarFrames: [NSImage] = []
     private var animatorSubscription: AnyCancellable?
 
-    private var audioPlayer: AVAudioPlayer?
     private var pressResetWork: DispatchWorkItem?
+    private var soundPlayer: SoundPlayer!
 
     private var defaultsObservation: NSObjectProtocol?
     private var iconPickerPopover: NSPopover?
@@ -37,15 +36,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     private var hintPopover: NSPopover?
     private var committedButtId: String?
     private var committedSoundId: String?
-    private var previewObservation: NSObjectProtocol?
+    private var iconPickerObservation: NSObjectProtocol?
+    private var soundPickerObservation: NSObjectProtocol?
     private var keyMonitor: Any?
 
     private var buttLookup: [String: ButtInfo] = [:]
     private var soundLookup: [String: SoundInfo] = [:]
-
-    private var shuffleQueue: [Int] = []
-    private var shuffleIndex: Int = 0
-    private var lastShuffleSoundId: String?
 
     private var currentButtId: String {
         UserDefaults.standard.string(forKey: Defaults.selectedButtIdKey) ?? Defaults.defaultButtId
@@ -70,6 +66,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     func applicationDidFinishLaunching(_ notification: Notification) {
         buttLookup = Dictionary(uniqueKeysWithValues: buttManifest.map { ($0.id, $0) })
         soundLookup = Dictionary(uniqueKeysWithValues: soundManifest.map { ($0.id, $0) })
+        soundPlayer = SoundPlayer(soundLookup: soundLookup)
         setupStatusItem()
         loadButt()
 
@@ -126,6 +123,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         menuBarFrames = newAnimator.frames.map { mode.processFrame($0, size: size) }
 
         animatorSubscription = newAnimator.$currentFrameIndex
+            .receive(on: DispatchQueue.main)
             .sink { [weak self] index in
                 guard let self, index < self.menuBarFrames.count else { return }
                 self.statusItem.button?.image = self.menuBarFrames[index]
@@ -182,30 +180,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             }
         }
 
-        guard let sound = soundLookup[currentSoundId] else { return }
-
-        let url: URL?
-        if sound.isShuffle, let segments = sound.segments, !segments.isEmpty {
-            // Reset queue on sound switch or when exhausted
-            if lastShuffleSoundId != sound.id || shuffleIndex >= shuffleQueue.count {
-                shuffleQueue = reshuffledQueue(count: segments.count)
-                shuffleIndex = 0
-                lastShuffleSoundId = sound.id
-            }
-            url = segments[shuffleQueue[shuffleIndex]].bundleURL
-            shuffleIndex += 1
-        } else {
-            url = sound.bundleURL
-        }
-
-        guard let url else { return }
-        do {
-            audioPlayer = try AVAudioPlayer(contentsOf: url)
-            audioPlayer?.numberOfLoops = 0
-            audioPlayer?.play()
-        } catch {
-            return
-        }
+        soundPlayer.play(soundId: currentSoundId)
     }
 
     private func triggerHighlight() {
@@ -217,12 +192,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         }
         pressResetWork = resetWork
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.15, execute: resetWork)
-    }
-
-    private func reshuffledQueue(count: Int) -> [Int] {
-        var indices = Array(0..<count)
-        indices.shuffle()
-        return indices
     }
 
     // MARK: - Context Menu
@@ -321,15 +290,26 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             return
         }
 
-        let popover = NSPopover()
-        popover.contentSize = Layout.aboutPopoverSize
-        popover.behavior = .transient
-        popover.contentViewController = NSHostingController(rootView: CreditsView())
+        let popover = showPopover(size: Layout.aboutPopoverSize, content: CreditsView())
         aboutPopover = popover
+    }
 
-        guard let button = statusItem.button else { return }
+    // MARK: - Popover Helper
+
+    @discardableResult
+    private func showPopover<V: View>(
+        size: NSSize, content: V, delegate: NSPopoverDelegate? = nil
+    ) -> NSPopover {
+        let popover = NSPopover()
+        popover.contentSize = size
+        popover.behavior = .transient
+        popover.delegate = delegate
+        popover.contentViewController = NSHostingController(rootView: content)
+
+        guard let button = statusItem.button else { return popover }
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
         popover.contentViewController?.view.window?.makeKey()
+        return popover
     }
 
     func menuDidClose(_ menu: NSMenu) {
@@ -348,16 +328,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             return
         }
 
-        let popover = NSPopover()
-        popover.contentSize = Layout.popoverSize
-        popover.behavior = .transient
-        popover.delegate = self
-        popover.contentViewController = NSHostingController(rootView: ButtPickerView())
+        let popover = showPopover(size: Layout.popoverSize, content: ButtPickerView(), delegate: self)
         iconPickerPopover = popover
 
         committedButtId = currentButtId
 
-        previewObservation = NotificationCenter.default.addObserver(
+        iconPickerObservation = NotificationCenter.default.addObserver(
             forName: .previewButt, object: nil, queue: .main
         ) { [weak self] notification in
             guard let buttId = notification.userInfo?["buttId"] as? String else { return }
@@ -371,13 +347,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             returnAction: { [weak self] in self?.commitAndClosePopover() }
         )
 
-        guard let button = statusItem.button else { return }
-        popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
-        // Make just the popover's window key — gives it focus for interactivity
-        // and .transient dismissal without activating the entire app (which causes
-        // "Show Desktop" on desktop click and Space-switching on fullscreen).
-        popover.contentViewController?.view.window?.makeKey()
-
         // Async so the context menu's tracking loop fully unwinds before Touch Bar setup
         DispatchQueue.main.async {
             if #available(macOS 10.12.2, *) { TouchBarParade.attach(to: popover) }
@@ -389,29 +358,32 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             NSEvent.removeMonitor(monitor)
             keyMonitor = nil
         }
-        if let obs = previewObservation {
-            NotificationCenter.default.removeObserver(obs)
-            previewObservation = nil
-        }
 
         let closedPopover = notification.object as? NSPopover
 
         // Revert butt preview when the icon picker closes
         if closedPopover === iconPickerPopover {
+            if let obs = iconPickerObservation {
+                NotificationCenter.default.removeObserver(obs)
+                iconPickerObservation = nil
+            }
             if let committed = committedButtId, committed != lastLoadedButtId {
                 loadButtById(committed)
                 lastLoadedButtId = committed
                 lastLoadedIconSize = currentIconSize
             }
             iconPickerPopover = nil
+            committedButtId = nil
         } else if closedPopover === soundPickerPopover {
+            if let obs = soundPickerObservation {
+                NotificationCenter.default.removeObserver(obs)
+                soundPickerObservation = nil
+            }
             soundPickerPopover = nil
+            committedSoundId = nil
         } else if closedPopover === hintPopover {
             hintPopover = nil
         }
-
-        committedButtId = nil
-        committedSoundId = nil
     }
 
     // MARK: - Keyboard Monitor
@@ -423,7 +395,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         columns: Int,
         spaceAction: @escaping () -> Void,
         returnAction: @escaping () -> Void
-    ) -> Any {
+    ) -> Any? {
         NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             switch event.keyCode {
             case KeyCode.leftArrow:
@@ -451,7 +423,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             default:
                 return event
             }
-        }!
+        }
     }
 
     // MARK: - Sound Picker Popover
@@ -465,15 +437,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     private func showHint() {
         guard hintPopover == nil else { return }
 
-        let popover = NSPopover()
-        popover.contentSize = Layout.hintPopoverSize
-        popover.behavior = .transient
-        popover.delegate = self
-        popover.contentViewController = NSHostingController(rootView: HintView())
+        let popover = showPopover(size: Layout.hintPopoverSize, content: HintView(), delegate: self)
         hintPopover = popover
-
-        guard let button = statusItem.button else { return }
-        popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) { [weak popover] in
             popover?.performClose(nil)
@@ -486,16 +451,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             return
         }
 
-        let popover = NSPopover()
-        popover.contentSize = Layout.soundPopoverSize
-        popover.behavior = .transient
-        popover.delegate = self
-        popover.contentViewController = NSHostingController(rootView: SoundPickerView())
+        let popover = showPopover(size: Layout.soundPopoverSize, content: SoundPickerView(), delegate: self)
         soundPickerPopover = popover
 
         committedSoundId = currentSoundId
 
-        previewObservation = NotificationCenter.default.addObserver(
+        soundPickerObservation = NotificationCenter.default.addObserver(
             forName: .confirmAndCloseSound, object: nil, queue: .main
         ) { [weak self] _ in
             guard let self else { return }
@@ -510,28 +471,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             returnAction: { NotificationCenter.default.post(name: .confirmAndCloseSound, object: nil) }
         )
 
-        guard let button = statusItem.button else { return }
-        popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
-        popover.contentViewController?.view.window?.makeKey()
-
         DispatchQueue.main.async {
             if #available(macOS 10.12.2, *) { TouchBarParade.attach(to: popover) }
         }
     }
 
-}
-
-// MARK: - Hint View
-
-private struct HintView: View {
-    var body: some View {
-        VStack(spacing: 4) {
-            Text("Right-click for options")
-                .font(.system(size: 13, weight: .bold))
-            Text("Change icon, sound, and more")
-                .font(.system(size: 11))
-                .foregroundColor(.secondary)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
 }
