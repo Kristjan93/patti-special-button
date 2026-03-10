@@ -94,15 +94,15 @@ def process_frame(frame: Image.Image, bold: bool = False) -> Image.Image:
     Pipeline:
       1. Convert to grayscale (luminance)
       2. Resize to 160x160
-      3. If bold, apply MinFilter(3) to thicken lines (+1px at 160px scale —
-         applied after resize so the thickening survives downscaling to menu bar size)
+      3. If bold, apply MinFilter(3) to thicken lines (+1px at 512px scale,
+         before resize to preserve the artist's line quality)
       4. Invert grayscale → alpha, RGB = black
          Dark lines become opaque black, white background becomes transparent.
     """
     grayscale = frame.convert("L")
-    resized_gray = grayscale.resize(FRAME_SIZE, resample=RESAMPLE)
     if bold:
-        resized_gray = resized_gray.filter(ImageFilter.MinFilter(size=3))
+        grayscale = grayscale.filter(ImageFilter.MinFilter(size=3))
+    resized_gray = grayscale.resize(FRAME_SIZE, resample=RESAMPLE)
 
     # Resize before alpha conversion to avoid blending artifacts in Lanczos.
     inverted = ImageOps.invert(resized_gray)
