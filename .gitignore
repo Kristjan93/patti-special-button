@@ -19,4 +19,5 @@ __pycache__/
 
 # Build artifacts
 *.dmg
+*.dmg.zip
 scripts/.dmg-staging/

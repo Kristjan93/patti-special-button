@@ -1,6 +1,7 @@
 import AppKit
 import AVFoundation
 import Combine
+import ServiceManagement
 import Sparkle
 import SwiftUI
 
@@ -82,6 +83,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             self?.handleButtChange()
         }
 
+        if #available(macOS 13.0, *) {
+            try? SMAppService.mainApp.register()
+        }
     }
 
     // MARK: - Butt Switching
